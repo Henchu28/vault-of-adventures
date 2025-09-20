@@ -1,11 +1,191 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Users, Sword, Map, Music, BookOpen, Dice6 } from 'lucide-react';
 
 const Index = () => {
+  const { user, profile } = useAuth();
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-6 max-w-2xl mx-auto px-4">
+          <div className="space-y-4">
+            <Dice6 className="w-16 h-16 mx-auto text-primary" />
+            <h1 className="text-4xl font-bold">D&D Campaign Manager</h1>
+            <p className="text-xl text-muted-foreground">
+              Organize your adventures, track your characters, and manage your campaigns all in one place.
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold">Features</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Users className="w-5 h-5" />
+                    <span>Character Management</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Keep track of all player characters and NPCs with detailed information and stats.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Sword className="w-5 h-5" />
+                    <span>Campaign Tracking</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Organize your ongoing and completed campaigns with detailed descriptions.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Map className="w-5 h-5" />
+                    <span>Interactive Maps</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Store and organize maps of all the places your adventures take you.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Music className="w-5 h-5" />
+                    <span>Ambient Music</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Set the mood with a curated collection of background music for your sessions.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <Link to="/auth">
+            <Button size="lg" className="mt-8">
+              Get Started
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="space-y-8">
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold">Welcome to Your Campaign</h1>
+        <p className="text-xl text-muted-foreground">
+          Ready for your next adventure, {profile?.display_name}?
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Users className="w-5 h-5" />
+              <span>Characters</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              Manage player characters and NPCs
+            </CardDescription>
+            <Link to="/characters">
+              <Button className="w-full">View Characters</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Sword className="w-5 h-5" />
+              <span>Campaigns</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              Track your ongoing adventures
+            </CardDescription>
+            <Link to="/campaigns">
+              <Button className="w-full">View Campaigns</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Map className="w-5 h-5" />
+              <span>Maps</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              Explore your world maps
+            </CardDescription>
+            <Link to="/maps">
+              <Button className="w-full">View Maps</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Music className="w-5 h-5" />
+              <span>Music</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              Set the perfect ambiance
+            </CardDescription>
+            <Link to="/music">
+              <Button className="w-full">Browse Music</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {profile?.role === 'master' && (
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BookOpen className="w-5 h-5" />
+                <span>Master Notes</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="mb-4">
+                Organize your campaign notes
+              </CardDescription>
+              <Link to="/notes">
+                <Button className="w-full">View Notes</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
