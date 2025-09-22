@@ -3,6 +3,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Sword, Map, Music, BookOpen, Dice6 } from 'lucide-react';
+import charactersImg from '@/assets/characters-card.jpg';
+import campaignsImg from '@/assets/campaigns-card.jpg';
+import mapsImg from '@/assets/maps-card.jpg';
+import musicImg from '@/assets/music-card.jpg';
+import notesImg from '@/assets/notes-card.jpg';
 
 const Index = () => {
   const { user, profile } = useAuth();
@@ -100,10 +105,18 @@ const Index = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+          <div 
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${charactersImg})` }}
+          >
+            <div className="absolute inset-0 bg-primary/40" />
+            <div className="absolute top-4 left-4">
+              <Users className="w-8 h-8 text-primary-foreground" />
+            </div>
+          </div>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Users className="w-5 h-5" />
               <span>Characters</span>
             </CardTitle>
           </CardHeader>
@@ -112,15 +125,23 @@ const Index = () => {
               Manage player characters and NPCs
             </CardDescription>
             <Link to="/characters">
-              <Button className="w-full">View Characters</Button>
+              <Button className="w-full bg-primary hover:bg-primary/90">View Characters</Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+          <div 
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${campaignsImg})` }}
+          >
+            <div className="absolute inset-0 bg-primary/40" />
+            <div className="absolute top-4 left-4">
+              <Sword className="w-8 h-8 text-primary-foreground" />
+            </div>
+          </div>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Sword className="w-5 h-5" />
               <span>Campaigns</span>
             </CardTitle>
           </CardHeader>
@@ -129,15 +150,23 @@ const Index = () => {
               Track your ongoing adventures
             </CardDescription>
             <Link to="/campaigns">
-              <Button className="w-full">View Campaigns</Button>
+              <Button className="w-full bg-primary hover:bg-primary/90">View Campaigns</Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+          <div 
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${mapsImg})` }}
+          >
+            <div className="absolute inset-0 bg-primary/40" />
+            <div className="absolute top-4 left-4">
+              <Map className="w-8 h-8 text-primary-foreground" />
+            </div>
+          </div>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Map className="w-5 h-5" />
               <span>Maps</span>
             </CardTitle>
           </CardHeader>
@@ -146,15 +175,23 @@ const Index = () => {
               Explore your world maps
             </CardDescription>
             <Link to="/maps">
-              <Button className="w-full">View Maps</Button>
+              <Button className="w-full bg-primary hover:bg-primary/90">View Maps</Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+          <div 
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${musicImg})` }}
+          >
+            <div className="absolute inset-0 bg-primary/40" />
+            <div className="absolute top-4 left-4">
+              <Music className="w-8 h-8 text-primary-foreground" />
+            </div>
+          </div>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Music className="w-5 h-5" />
               <span>Music</span>
             </CardTitle>
           </CardHeader>
@@ -163,16 +200,24 @@ const Index = () => {
               Set the perfect ambiance
             </CardDescription>
             <Link to="/music">
-              <Button className="w-full">Browse Music</Button>
+              <Button className="w-full bg-primary hover:bg-primary/90">Browse Music</Button>
             </Link>
           </CardContent>
         </Card>
 
         {profile?.role === 'master' && (
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+            <div 
+              className="h-48 bg-cover bg-center relative"
+              style={{ backgroundImage: `url(${notesImg})` }}
+            >
+              <div className="absolute inset-0 bg-primary/40" />
+              <div className="absolute top-4 left-4">
+                <BookOpen className="w-8 h-8 text-primary-foreground" />
+              </div>
+            </div>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <BookOpen className="w-5 h-5" />
                 <span>Master Notes</span>
               </CardTitle>
             </CardHeader>
@@ -181,7 +226,7 @@ const Index = () => {
                 Organize your campaign notes
               </CardDescription>
               <Link to="/notes">
-                <Button className="w-full">View Notes</Button>
+                <Button className="w-full bg-primary hover:bg-primary/90">View Notes</Button>
               </Link>
             </CardContent>
           </Card>
