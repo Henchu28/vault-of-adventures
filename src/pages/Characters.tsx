@@ -47,9 +47,11 @@ export default function Characters() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [npcs, setNPCs] = useState<NPC[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRace, setFilterRace] = useState('all');
-  const [filterClass, setFilterClass] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
+  const [filterArchetype, setFilterArchetype] = useState('all');
+  const [filterElement, setFilterElement] = useState('all');
+  const [filterEssence, setFilterEssence] = useState('all');
+  const [filterOrg, setFilterOrg] = useState('all');
+  const [organizations, setOrganizations] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [isCharacterDialogOpen, setIsCharacterDialogOpen] = useState(false);
@@ -64,13 +66,15 @@ export default function Characters() {
   const fetchData = async () => {
     setLoading(true);
     
-    const [charactersResult, npcsResult] = await Promise.all([
+    const [charactersResult, npcsResult, orgsResult] = await Promise.all([
       supabase.from('characters').select('*'),
-      supabase.from('npcs').select('*')
+      supabase.from('npcs').select('*'),
+      supabase.from('organizations').select('org_name')
     ]);
 
     if (charactersResult.data) setCharacters(charactersResult.data);
     if (npcsResult.data) setNPCs(npcsResult.data);
+    if (orgsResult.data) setOrganizations(orgsResult.data.map(o => o.org_name));
     
     setLoading(false);
   };
@@ -124,28 +128,19 @@ export default function Characters() {
   const filteredCharacters = characters
     .filter(char => 
       char.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterRace === 'all' || char.race === filterRace) &&
-      (filterClass === 'all' || char.class === filterClass)
-    )
-    .sort((a, b) => {
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
-      if (sortBy === 'age') return a.age - b.age;
-      if (sortBy === 'race') return a.race.localeCompare(b.race);
-      return 0;
-    });
+      (filterArchetype === 'all' || char.class === filterArchetype) &&
+      (filterElement === 'all' || char.race === filterElement) &&
+      (filterEssence === 'all' || char.power1 === filterEssence) &&
+      (filterOrg === 'all' || char.advantages === filterOrg)
+    );
 
   const filteredNPCs = npcs
     .filter(npc => 
       npc.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterRace === 'all' || npc.race === filterRace) &&
-      (filterClass === 'all' || npc.class === filterClass)
-    )
-    .sort((a, b) => {
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
-      if (sortBy === 'age') return a.age - b.age;
-      if (sortBy === 'race') return a.race.localeCompare(b.race);
-      return 0;
-    });
+      (filterArchetype === 'all' || npc.class === filterArchetype) &&
+      (filterElement === 'all' || npc.race === filterElement) &&
+      (filterEssence === 'all' || npc.alignment === filterEssence)
+    );
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-[400px]">Loading characters...</div>;
@@ -195,46 +190,71 @@ export default function Characters() {
         <div className="flex items-center space-x-2 flex-1 min-w-[200px]">
           <Search className="w-4 h-4" />
           <Input
-            placeholder="Search characters..."
+            placeholder="Buscar por nombre..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         
-        <Select value={filterRace} onValueChange={setFilterRace}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Race" />
+        <Select value={filterArchetype} onValueChange={setFilterArchetype}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Arquetipo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Races</SelectItem>
-            <SelectItem value="Human">Human</SelectItem>
-            <SelectItem value="Elf">Elf</SelectItem>
-            <SelectItem value="Dwarf">Dwarf</SelectItem>
-            <SelectItem value="Halfling">Halfling</SelectItem>
+            <SelectItem value="all">Todos los Arquetipos</SelectItem>
+            <SelectItem value="Emisor">Emisor</SelectItem>
+            <SelectItem value="Modulador">Modulador</SelectItem>
+            <SelectItem value="Canalizador">Canalizador</SelectItem>
+            <SelectItem value="Invocador">Invocador</SelectItem>
+            <SelectItem value="Focalizador">Focalizador</SelectItem>
+            <SelectItem value="Compuesto">Compuesto</SelectItem>
           </SelectContent>
         </Select>
 
-        <Select value={filterClass} onValueChange={setFilterClass}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Class" />
+        <Select value={filterElement} onValueChange={setFilterElement}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Elemento" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            <SelectItem value="Fighter">Fighter</SelectItem>
-            <SelectItem value="Wizard">Wizard</SelectItem>
-            <SelectItem value="Rogue">Rogue</SelectItem>
-            <SelectItem value="Cleric">Cleric</SelectItem>
+            <SelectItem value="all">Todos los Elementos</SelectItem>
+            <SelectItem value="Fuego">Fuego</SelectItem>
+            <SelectItem value="Hielo">Hielo</SelectItem>
+            <SelectItem value="Tierra">Tierra</SelectItem>
+            <SelectItem value="Planta">Planta</SelectItem>
+            <SelectItem value="Luz">Luz</SelectItem>
+            <SelectItem value="Oscuridad">Oscuridad</SelectItem>
+            <SelectItem value="Viento">Viento</SelectItem>
+            <SelectItem value="Electricidad">Electricidad</SelectItem>
+            <SelectItem value="Espiritual">Espiritual</SelectItem>
           </SelectContent>
         </Select>
 
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Sort by" />
+        <Select value={filterEssence} onValueChange={setFilterEssence}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Esencia" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="age">Age</SelectItem>
-            <SelectItem value="race">Race</SelectItem>
+            <SelectItem value="all">Todas las Esencias</SelectItem>
+            <SelectItem value="Nominancia">Nominancia</SelectItem>
+            <SelectItem value="Transmutación">Transmutación</SelectItem>
+            <SelectItem value="Distorsión">Distorsión</SelectItem>
+            <SelectItem value="Cronomancia">Cronomancia</SelectItem>
+            <SelectItem value="Dimensiología">Dimensiología</SelectItem>
+            <SelectItem value="Sincronimia">Sincronimia</SelectItem>
+            <SelectItem value="Emblemancia">Emblemancia</SelectItem>
+            <SelectItem value="Vacío">Vacío</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filterOrg} onValueChange={setFilterOrg}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Organización" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las Organizaciones</SelectItem>
+            {organizations.map(org => (
+              <SelectItem key={org} value={org}>{org}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

@@ -188,6 +188,27 @@ export type Database = {
           },
         ]
       }
+      organizations: {
+        Row: {
+          id: number
+          lider: string | null
+          n_acolites: number | null
+          org_name: string
+        }
+        Insert: {
+          id?: number
+          lider?: string | null
+          n_acolites?: number | null
+          org_name?: string
+        }
+        Update: {
+          id?: number
+          lider?: string | null
+          n_acolites?: number | null
+          org_name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
