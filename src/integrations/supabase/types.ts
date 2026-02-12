@@ -31,57 +31,55 @@ export type Database = {
       }
       characters: {
         Row: {
-          advantages: string | null
-          age: number | null
-          birthdate: string | null
-          campaign_id: number | null
-          class: string | null
-          disadvantages: string | null
-          height: number | null
+          Arquetipo: string | null
+          Edad: number | null
+          Elemento: string | null
+          Esencia: string | null
+          Estado: string | null
+          id: number
+          ID_Campaña: number | null
           name: string
-          power1: string | null
-          power2: string | null
-          race: string | null
-          status: string | null
-          story: string | null
+          Organización: string
+          Raza: string | null
         }
         Insert: {
-          advantages?: string | null
-          age?: number | null
-          birthdate?: string | null
-          campaign_id?: number | null
-          class?: string | null
-          disadvantages?: string | null
-          height?: number | null
+          Arquetipo?: string | null
+          Edad?: number | null
+          Elemento?: string | null
+          Esencia?: string | null
+          Estado?: string | null
+          id?: number
+          ID_Campaña?: number | null
           name?: string
-          power1?: string | null
-          power2?: string | null
-          race?: string | null
-          status?: string | null
-          story?: string | null
+          Organización?: string
+          Raza?: string | null
         }
         Update: {
-          advantages?: string | null
-          age?: number | null
-          birthdate?: string | null
-          campaign_id?: number | null
-          class?: string | null
-          disadvantages?: string | null
-          height?: number | null
+          Arquetipo?: string | null
+          Edad?: number | null
+          Elemento?: string | null
+          Esencia?: string | null
+          Estado?: string | null
+          id?: number
+          ID_Campaña?: number | null
           name?: string
-          power1?: string | null
-          power2?: string | null
-          race?: string | null
-          status?: string | null
-          story?: string | null
+          Organización?: string
+          Raza?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "characters_campaign_id_fkey"
-            columns: ["campaign_id"]
+            foreignKeyName: "characters_ID_Campaña_fkey"
+            columns: ["ID_Campaña"]
             isOneToOne: false
             referencedRelation: "campaigns"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "characters_Organización_fkey"
+            columns: ["Organización"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["org_name"]
           },
         ]
       }
@@ -146,42 +144,45 @@ export type Database = {
       }
       npcs: {
         Row: {
-          age: number
-          alignment: string | null
-          birthdate: string | null
-          campaign_id: number | null
-          class: string | null
-          height: number | null
+          Alignment: string | null
+          Arquetipo: string | null
+          Edad: number
+          Elemento: number | null
+          Esencia: string | null
+          Estado: string | null
+          id: number
+          ID_Campaña: number | null
           name: string
-          race: string | null
-          status: string | null
+          Raza: string | null
         }
         Insert: {
-          age?: number
-          alignment?: string | null
-          birthdate?: string | null
-          campaign_id?: number | null
-          class?: string | null
-          height?: number | null
+          Alignment?: string | null
+          Arquetipo?: string | null
+          Edad?: number
+          Elemento?: number | null
+          Esencia?: string | null
+          Estado?: string | null
+          id?: number
+          ID_Campaña?: number | null
           name: string
-          race?: string | null
-          status?: string | null
+          Raza?: string | null
         }
         Update: {
-          age?: number
-          alignment?: string | null
-          birthdate?: string | null
-          campaign_id?: number | null
-          class?: string | null
-          height?: number | null
+          Alignment?: string | null
+          Arquetipo?: string | null
+          Edad?: number
+          Elemento?: number | null
+          Esencia?: string | null
+          Estado?: string | null
+          id?: number
+          ID_Campaña?: number | null
           name?: string
-          race?: string | null
-          status?: string | null
+          Raza?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "npcs_campaign_id_fkey"
-            columns: ["campaign_id"]
+            columns: ["ID_Campaña"]
             isOneToOne: false
             referencedRelation: "campaigns"
             referencedColumns: ["id"]
