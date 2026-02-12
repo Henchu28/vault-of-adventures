@@ -16,16 +16,19 @@ export type Database = {
     Tables: {
       campaigns: {
         Row: {
+          description: string | null
           id: number
-          plain: string
+          name: string
         }
         Insert: {
+          description?: string | null
           id?: number
-          plain: string
+          name: string
         }
         Update: {
+          description?: string | null
           id?: number
-          plain?: string
+          name?: string
         }
         Relationships: []
       }
@@ -147,7 +150,7 @@ export type Database = {
           Alignment: string | null
           Arquetipo: string | null
           Edad: number
-          Elemento: number | null
+          Elemento: string | null
           Esencia: string | null
           Estado: string | null
           id: number
@@ -159,7 +162,7 @@ export type Database = {
           Alignment?: string | null
           Arquetipo?: string | null
           Edad?: number
-          Elemento?: number | null
+          Elemento?: string | null
           Esencia?: string | null
           Estado?: string | null
           id?: number
@@ -171,7 +174,7 @@ export type Database = {
           Alignment?: string | null
           Arquetipo?: string | null
           Edad?: number
-          Elemento?: number | null
+          Elemento?: string | null
           Esencia?: string | null
           Estado?: string | null
           id?: number
