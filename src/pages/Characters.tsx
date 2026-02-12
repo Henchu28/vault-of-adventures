@@ -13,31 +13,29 @@ import { Plus, Edit, Trash2, Search, User, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface Character {
+  id: number;
   name: string;
-  race: string;
-  class: string;
-  age: number;
-  height: number;
-  birthdate: string;
-  status: string;
-  story: string;
-  advantages: string;
-  disadvantages: string;
-  power1: string;
-  power2: string;
-  campaign_id: number;
+  Raza: string | null;
+  Arquetipo: string | null;
+  Elemento: string | null;
+  Esencia: string | null;
+  Organización: string;
+  Edad: number | null;
+  Estado: string | null;
+  ID_Campaña: number | null;
 }
 
 interface NPC {
+  id: number;
   name: string;
-  race: string;
-  class: string;
-  age: number;
-  height: number;
-  birthdate: string;
-  status: string;
-  alignment: string;
-  campaign_id: number;
+  Raza: string | null;
+  Arquetipo: string | null;
+  Elemento: number | null;
+  Esencia: string | null;
+  Edad: number;
+  Estado: string | null;
+  Alignment: string | null;
+  ID_Campaña: number | null;
 }
 
 export default function Characters() {
@@ -128,18 +126,18 @@ export default function Characters() {
   const filteredCharacters = characters
     .filter(char => 
       char.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterArchetype === 'all' || char.class === filterArchetype) &&
-      (filterElement === 'all' || char.race === filterElement) &&
-      (filterEssence === 'all' || char.power1 === filterEssence) &&
-      (filterOrg === 'all' || char.advantages === filterOrg)
+      (filterArchetype === 'all' || char.Arquetipo === filterArchetype) &&
+      (filterElement === 'all' || char.Elemento === filterElement) &&
+      (filterEssence === 'all' || char.Esencia === filterEssence) &&
+      (filterOrg === 'all' || char.Organización === filterOrg)
     );
 
   const filteredNPCs = npcs
     .filter(npc => 
       npc.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterArchetype === 'all' || npc.class === filterArchetype) &&
-      (filterElement === 'all' || npc.race === filterElement) &&
-      (filterEssence === 'all' || npc.alignment === filterEssence)
+      (filterArchetype === 'all' || npc.Arquetipo === filterArchetype) &&
+      (filterElement === 'all' || String(npc.Elemento) === filterElement) &&
+      (filterEssence === 'all' || npc.Esencia === filterEssence)
     );
 
   if (loading) {
@@ -300,15 +298,13 @@ export default function Characters() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Race:</span> {character.race}</p>
-                    <p><span className="font-medium">Class:</span> {character.class}</p>
-                    <p><span className="font-medium">Age:</span> {character.age}</p>
-                    <p><span className="font-medium">Status:</span> {character.status}</p>
-                    {character.story && (
-                      <p className="text-muted-foreground text-xs mt-2">
-                        {character.story.substring(0, 100)}...
-                      </p>
-                    )}
+                    <p><span className="font-medium">Raza:</span> {character.Raza}</p>
+                    <p><span className="font-medium">Arquetipo:</span> {character.Arquetipo}</p>
+                    <p><span className="font-medium">Elemento:</span> {character.Elemento}</p>
+                    <p><span className="font-medium">Esencia:</span> {character.Esencia}</p>
+                    <p><span className="font-medium">Edad:</span> {character.Edad}</p>
+                    <p><span className="font-medium">Organización:</span> {character.Organización}</p>
+                    <p><span className="font-medium">Estado:</span> {character.Estado}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -345,11 +341,13 @@ export default function Characters() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Race:</span> {npc.race}</p>
-                    <p><span className="font-medium">Class:</span> {npc.class}</p>
-                    <p><span className="font-medium">Age:</span> {npc.age}</p>
-                    <p><span className="font-medium">Alignment:</span> {npc.alignment}</p>
-                    <p><span className="font-medium">Status:</span> {npc.status}</p>
+                    <p><span className="font-medium">Raza:</span> {npc.Raza}</p>
+                    <p><span className="font-medium">Arquetipo:</span> {npc.Arquetipo}</p>
+                    <p><span className="font-medium">Elemento:</span> {npc.Elemento}</p>
+                    <p><span className="font-medium">Esencia:</span> {npc.Esencia}</p>
+                    <p><span className="font-medium">Edad:</span> {npc.Edad}</p>
+                    <p><span className="font-medium">Alineamiento:</span> {npc.Alignment}</p>
+                    <p><span className="font-medium">Estado:</span> {npc.Estado}</p>
                   </div>
                 </CardContent>
               </Card>
