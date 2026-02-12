@@ -198,62 +198,62 @@ export default function Characters() {
         
         <Select value={filterArchetype} onValueChange={setFilterArchetype}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Arquetipo" />
+            <SelectValue placeholder="Arquetipos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los Arquetipos</SelectItem>
-            <SelectItem value="Emisor">Emisor</SelectItem>
-            <SelectItem value="Modulador">Modulador</SelectItem>
-            <SelectItem value="Canalizador">Canalizador</SelectItem>
-            <SelectItem value="Invocador">Invocador</SelectItem>
-            <SelectItem value="Focalizador">Focalizador</SelectItem>
-            <SelectItem value="Compuesto">Compuesto</SelectItem>
+            <SelectItem value="all" className="pl-2">Arquetipos</SelectItem>
+            <SelectItem value="Emisor" className="pl-2">Emisor</SelectItem>
+            <SelectItem value="Modulador" className="pl-2">Modulador</SelectItem>
+            <SelectItem value="Canalizador" className="pl-2">Canalizador</SelectItem>
+            <SelectItem value="Invocador" className="pl-2">Invocador</SelectItem>
+            <SelectItem value="Focalizador" className="pl-2">Focalizador</SelectItem>
+            <SelectItem value="Compuesto" className="pl-2">Compuesto</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={filterElement} onValueChange={setFilterElement}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Elemento" />
+            <SelectValue placeholder="Elementos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los Elementos</SelectItem>
-            <SelectItem value="Fuego">Fuego</SelectItem>
-            <SelectItem value="Hielo">Hielo</SelectItem>
-            <SelectItem value="Tierra">Tierra</SelectItem>
-            <SelectItem value="Planta">Planta</SelectItem>
-            <SelectItem value="Luz">Luz</SelectItem>
-            <SelectItem value="Oscuridad">Oscuridad</SelectItem>
-            <SelectItem value="Viento">Viento</SelectItem>
-            <SelectItem value="Electricidad">Electricidad</SelectItem>
-            <SelectItem value="Espiritual">Espiritual</SelectItem>
+            <SelectItem value="all" className="pl-2">Elementos</SelectItem>
+            <SelectItem value="Fuego" className="pl-2">Fuego</SelectItem>
+            <SelectItem value="Hielo" className="pl-2">Hielo</SelectItem>
+            <SelectItem value="Tierra" className="pl-2">Tierra</SelectItem>
+            <SelectItem value="Planta" className="pl-2">Planta</SelectItem>
+            <SelectItem value="Luz" className="pl-2">Luz</SelectItem>
+            <SelectItem value="Oscuridad" className="pl-2">Oscuridad</SelectItem>
+            <SelectItem value="Viento" className="pl-2">Viento</SelectItem>
+            <SelectItem value="Electricidad" className="pl-2">Electricidad</SelectItem>
+            <SelectItem value="Espiritual" className="pl-2">Espiritual</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={filterEssence} onValueChange={setFilterEssence}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Esencia" />
+            <SelectValue placeholder="Esencias" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas las Esencias</SelectItem>
-            <SelectItem value="Nominancia">Nominancia</SelectItem>
-            <SelectItem value="Transmutación">Transmutación</SelectItem>
-            <SelectItem value="Distorsión">Distorsión</SelectItem>
-            <SelectItem value="Cronomancia">Cronomancia</SelectItem>
-            <SelectItem value="Dimensiología">Dimensiología</SelectItem>
-            <SelectItem value="Sincronimia">Sincronimia</SelectItem>
-            <SelectItem value="Emblemancia">Emblemancia</SelectItem>
-            <SelectItem value="Vacío">Vacío</SelectItem>
+            <SelectItem value="all" className="pl-2">Esencias</SelectItem>
+            <SelectItem value="Nominancia" className="pl-2">Nominancia</SelectItem>
+            <SelectItem value="Transmutación" className="pl-2">Transmutación</SelectItem>
+            <SelectItem value="Distorsión" className="pl-2">Distorsión</SelectItem>
+            <SelectItem value="Cronomancia" className="pl-2">Cronomancia</SelectItem>
+            <SelectItem value="Dimensiología" className="pl-2">Dimensiología</SelectItem>
+            <SelectItem value="Sincronimia" className="pl-2">Sincronimia</SelectItem>
+            <SelectItem value="Emblemancia" className="pl-2">Emblemancia</SelectItem>
+            <SelectItem value="Vacío" className="pl-2">Vacío</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={filterOrg} onValueChange={setFilterOrg}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Organización" />
+            <SelectValue placeholder="Organizaciones" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas las Organizaciones</SelectItem>
+            <SelectItem value="all" className="pl-2">Organizaciones</SelectItem>
             {organizations.map(org => (
-              <SelectItem key={org} value={org}>{org}</SelectItem>
+              <SelectItem key={org} value={org} className="pl-2">{org}</SelectItem>
             ))}
           </SelectContent>
         </Select>
