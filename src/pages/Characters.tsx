@@ -30,7 +30,7 @@ interface NPC {
   name: string;
   Raza: string | null;
   Arquetipo: string | null;
-  Elemento: number | null;
+  Elemento: string | null;
   Esencia: string | null;
   Edad: number;
   Estado: string | null;

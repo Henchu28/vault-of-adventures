@@ -2,27 +2,27 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Search, Sword } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Plus, Sword, Shield } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface Campaign {
   id: number;
-  plain: string;
+  name: string;
+  description: string | null;
 }
 
 export default function Campaigns() {
   const { isMaster } = useAuth();
   const { toast } = useToast();
-  
+
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [newName, setNewName] = useState('');
+  const [newDescription, setNewDescription] = useState('');
 
   useEffect(() => {
     fetchCampaigns();
@@ -30,51 +30,35 @@ export default function Campaigns() {
 
   const fetchCampaigns = async () => {
     setLoading(true);
-    
     const { data, error } = await supabase
       .from('campaigns')
       .select('*')
       .order('id', { ascending: true });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch campaigns",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to fetch campaigns", variant: "destructive" });
     } else {
       setCampaigns(data || []);
     }
-    
     setLoading(false);
   };
 
-  const handleDelete = async (campaign: Campaign) => {
-    if (!isMaster) return;
-    
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
     const { error } = await supabase
       .from('campaigns')
-      .delete()
-      .eq('id', campaign.id);
+      .insert({ name: newName.trim(), description: newDescription.trim() || null });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete campaign",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to create campaign", variant: "destructive" });
     } else {
-      toast({
-        title: "Success",
-        description: "Campaign deleted successfully",
-      });
+      toast({ title: "¡Éxito!", description: "Campaña creada correctamente" });
+      setNewName('');
+      setNewDescription('');
+      setIsDialogOpen(false);
       fetchCampaigns();
     }
   };
-
-  const filteredCampaigns = campaigns.filter(campaign => 
-    campaign.plain.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-[400px]">Loading campaigns...</div>;
@@ -83,84 +67,79 @@ export default function Campaigns() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Campaigns</h1>
+        <h1 className="text-3xl font-bold">Campañas</h1>
         {isMaster && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                Add Campaign
+                Nueva Campaña
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Campaign</DialogTitle>
+                <DialogTitle>Crear Nueva Campaña</DialogTitle>
               </DialogHeader>
-              <div className="text-sm text-muted-foreground">Campaign form would go here</div>
+              <div className="space-y-4">
+                <Input
+                  placeholder="Nombre de la campaña"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+                <Input
+                  placeholder="Descripción (opcional)"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                />
+                <Button onClick={handleCreate} className="w-full">Crear</Button>
+              </div>
             </DialogContent>
           </Dialog>
         )}
       </div>
 
-      {/* Search */}
-      <div className="flex items-center space-x-2 p-4 bg-card rounded-lg">
-        <Search className="w-4 h-4" />
-        <Input
-          placeholder="Search campaigns..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      {/* Campaigns Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCampaigns.map((campaign) => (
-          <Card key={campaign.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Sword className="w-5 h-5" />
-                  <span>Campaign {campaign.id}</span>
-                </div>
-                {isMaster && (
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingCampaign(campaign)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(campaign)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  {campaign.plain || 'No description available'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredCampaigns.length === 0 && (
+      {campaigns.length === 0 ? (
         <div className="text-center py-12">
           <Sword className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium text-muted-foreground">No campaigns found</h3>
-          <p className="text-sm text-muted-foreground">
-            {searchTerm ? 'Try adjusting your search terms.' : 'Start your first adventure!'}
-          </p>
+          <h3 className="text-lg font-medium text-muted-foreground">No hay campañas</h3>
+          <p className="text-sm text-muted-foreground">¡Crea tu primera aventura!</p>
         </div>
+      ) : (
+        <Tabs defaultValue={String(campaigns[0].id)} className="w-full">
+          <TabsList className="w-full flex-wrap h-auto gap-2 bg-transparent p-0">
+            {campaigns.map((campaign) => (
+              <TabsTrigger
+                key={campaign.id}
+                value={String(campaign.id)}
+                className="relative flex-1 min-w-[140px] h-20 rounded-lg border border-border bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary transition-all"
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <Shield className="w-5 h-5" />
+                  <span className="text-sm font-medium truncate max-w-[120px]">{campaign.name}</span>
+                </div>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {campaigns.map((campaign) => (
+            <TabsContent key={campaign.id} value={String(campaign.id)}>
+              <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4 py-12">
+                <Sword className="w-20 h-20 text-muted-foreground animate-pulse" />
+                <h2 className="text-2xl font-bold text-muted-foreground">
+                  Página en desarrollo
+                </h2>
+                <p className="text-lg text-muted-foreground">
+                  ¡Vuelva más tarde aventurero!
+                </p>
+                {campaign.description && (
+                  <p className="text-sm text-muted-foreground/70 max-w-md mt-4 italic">
+                    "{campaign.description}"
+                  </p>
+                )}
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
       )}
     </div>
   );
