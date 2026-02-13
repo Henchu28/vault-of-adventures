@@ -1,1 +1,4 @@
 project_id = "bfrytttkdyrnzucibesd"
+
+[functions.drive-sessions]
+verify_jwt = false
