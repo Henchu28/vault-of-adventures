@@ -17,16 +17,19 @@ export type Database = {
       campaigns: {
         Row: {
           description: string | null
+          drive_folder_id: string | null
           id: number
           name: string
         }
         Insert: {
           description?: string | null
+          drive_folder_id?: string | null
           id?: number
           name: string
         }
         Update: {
           description?: string | null
+          drive_folder_id?: string | null
           id?: number
           name?: string
         }

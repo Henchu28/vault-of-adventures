@@ -1,0 +1,1 @@
+ALTER TABLE public.campaigns ADD COLUMN drive_folder_id text DEFAULT null;
