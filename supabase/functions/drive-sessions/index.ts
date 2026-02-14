@@ -96,9 +96,15 @@ Deno.serve(async (req) => {
 
     let serviceAccount;
     try {
-      serviceAccount = JSON.parse(serviceAccountJson);
+      let parsed = JSON.parse(serviceAccountJson);
+      // Handle double-encoded JSON (string within string)
+      while (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed);
+      }
+      serviceAccount = parsed;
     } catch (parseErr) {
       console.error('Failed to parse service account JSON:', parseErr);
+      console.error('Raw value type:', typeof serviceAccountJson, 'length:', serviceAccountJson.length, 'first 100 chars:', serviceAccountJson.substring(0, 100));
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid service account JSON format' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -107,6 +113,7 @@ Deno.serve(async (req) => {
 
     if (!serviceAccount.private_key) {
       console.error('Service account keys present:', Object.keys(serviceAccount));
+      console.error('Type after parse:', typeof serviceAccount);
       return new Response(
         JSON.stringify({ success: false, error: 'Service account JSON missing private_key field. Keys found: ' + Object.keys(serviceAccount).join(', ') }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
