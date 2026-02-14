@@ -23,12 +23,21 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   const unsignedToken = `${header}.${claim}`;
 
   // Import the private key for signing
-  const pemContents = serviceAccount.private_key
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\n/g, '');
+  let pk = serviceAccount.private_key;
+  // Handle double-escaped newlines from secret storage
+  pk = pk.replace(/\\n/g, '\n');
+  const pemContents = pk
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/[\n\r\s]/g, '');
 
-  const binaryKey = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+  
+
+  const binaryString = atob(pemContents);
+  const binaryKey = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    binaryKey[i] = binaryString.charCodeAt(i);
+  }
 
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
@@ -93,6 +102,7 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
 
     let serviceAccount;
     try {
