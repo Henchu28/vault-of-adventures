@@ -94,7 +94,25 @@ Deno.serve(async (req) => {
       );
     }
 
-    const serviceAccount = JSON.parse(serviceAccountJson);
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+    } catch (parseErr) {
+      console.error('Failed to parse service account JSON:', parseErr);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid service account JSON format' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!serviceAccount.private_key) {
+      console.error('Service account keys present:', Object.keys(serviceAccount));
+      return new Response(
+        JSON.stringify({ success: false, error: 'Service account JSON missing private_key field. Keys found: ' + Object.keys(serviceAccount).join(', ') }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const accessToken = await getAccessToken(serviceAccount);
 
     // List .docx files in folder
