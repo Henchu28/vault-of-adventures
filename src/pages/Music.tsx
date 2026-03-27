@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Trash2, Search, Music as MusicIcon, Play, Pause } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -24,48 +25,46 @@ export default function Music() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [playingSong, setPlayingSong] = useState<number | null>(null);
 
+  // Form state
+  const [formName, setFormName] = useState('');
+
   useEffect(() => {
     fetchSongs();
   }, []);
 
   const fetchSongs = async () => {
     setLoading(true);
-    
-    const { data, error } = await supabase
-      .from('songs')
-      .select('*')
-      .order('name', { ascending: true });
-
+    const { data, error } = await supabase.from('songs').select('*').order('name', { ascending: true });
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch songs",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to fetch songs", variant: "destructive" });
     } else {
       setSongs(data || []);
     }
-    
     setLoading(false);
   };
 
-  const handleDelete = async (song: Song) => {
-    const { error } = await supabase
-      .from('songs')
-      .delete()
-      .eq('id', song.id);
-
+  const handleCreate = async () => {
+    if (!formName.trim()) {
+      toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase.from('songs').insert({ name: formName.trim() });
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete song",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo añadir la canción", variant: "destructive" });
     } else {
-      toast({
-        title: "Success",
-        description: "Song deleted successfully",
-      });
+      toast({ title: "¡Éxito!", description: "Canción añadida correctamente" });
+      setFormName('');
+      setIsDialogOpen(false);
+      fetchSongs();
+    }
+  };
+
+  const handleDelete = async (song: Song) => {
+    const { error } = await supabase.from('songs').delete().eq('id', song.id);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete song", variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Song deleted successfully" });
       fetchSongs();
     }
   };
@@ -75,11 +74,7 @@ export default function Music() {
       setPlayingSong(null);
     } else {
       setPlayingSong(songId);
-      // Here you would implement actual audio playback
-      toast({
-        title: "Playing",
-        description: "Audio playback would be implemented here",
-      });
+      toast({ title: "Playing", description: "Audio playback would be implemented here" });
     }
   };
 
@@ -95,7 +90,7 @@ export default function Music() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Music Library</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setFormName(''); }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -104,24 +99,24 @@ export default function Music() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Song</DialogTitle>
+              <DialogTitle>Nueva Canción</DialogTitle>
             </DialogHeader>
-            <div className="text-sm text-muted-foreground">Song upload form would go here</div>
+            <div className="space-y-4">
+              <div>
+                <Label>Nombre *</Label>
+                <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Nombre de la canción" />
+              </div>
+              <Button onClick={handleCreate} className="w-full">Añadir Canción</Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Search */}
       <div className="flex items-center space-x-2 p-4 bg-card rounded-lg">
         <Search className="w-4 h-4" />
-        <Input
-          placeholder="Search songs..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <Input placeholder="Search songs..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      {/* Music Player Controls */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -133,9 +128,7 @@ export default function Music() {
           <div className="flex items-center justify-center py-8">
             {playingSong ? (
               <div className="text-center">
-                <p className="text-lg font-medium mb-2">
-                  {songs.find(s => s.id === playingSong)?.name}
-                </p>
+                <p className="text-lg font-medium mb-2">{songs.find(s => s.id === playingSong)?.name}</p>
                 <Button onClick={() => setPlayingSong(null)}>
                   <Pause className="w-4 h-4 mr-2" />
                   Stop
@@ -148,7 +141,6 @@ export default function Music() {
         </CardContent>
       </Card>
 
-      {/* Songs Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredSongs.map((song) => (
           <Card key={song.id} className="hover:shadow-lg transition-shadow">
@@ -158,26 +150,15 @@ export default function Music() {
                   <MusicIcon className="w-5 h-5" />
                   <span className="truncate">{song.name}</span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(song)}
-                >
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(song)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-center">
-                <Button
-                  variant={playingSong === song.id ? "secondary" : "default"}
-                  onClick={() => togglePlay(song.id)}
-                >
-                  {playingSong === song.id ? (
-                    <Pause className="w-4 h-4 mr-2" />
-                  ) : (
-                    <Play className="w-4 h-4 mr-2" />
-                  )}
+                <Button variant={playingSong === song.id ? "secondary" : "default"} onClick={() => togglePlay(song.id)}>
+                  {playingSong === song.id ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
                   {playingSong === song.id ? 'Pause' : 'Play'}
                 </Button>
               </div>
