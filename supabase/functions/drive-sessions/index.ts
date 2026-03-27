@@ -87,10 +87,11 @@ Deno.serve(async (req) => {
 
   try {
     const { folderId } = await req.json();
+    const normalizedFolderId = normalizeDriveFolderId(folderId);
 
-    if (!folderId) {
+    if (!normalizedFolderId) {
       return new Response(
-        JSON.stringify({ success: false, error: 'folderId is required' }),
+        JSON.stringify({ success: false, error: 'folderId is required (Google Drive folder ID or folder URL)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -133,7 +134,7 @@ Deno.serve(async (req) => {
     const accessToken = await getAccessToken(serviceAccount);
 
     // List .docx files in folder
-    const query = `'${folderId}' in parents and mimeType='application/vnd.google-apps.document' or ('${folderId}' in parents and mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document')`;
+    const query = `('${normalizedFolderId}' in parents and mimeType='application/vnd.google-apps.document') or ('${normalizedFolderId}' in parents and mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document')`;
     const listUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType)&orderBy=name`;
 
     const listRes = await fetch(listUrl, {
@@ -152,7 +153,7 @@ Deno.serve(async (req) => {
     const listData = await listRes.json();
     const files = listData.files || [];
 
-    console.log(`Found ${files.length} files in folder ${folderId}`);
+    console.log(`Found ${files.length} files in folder ${normalizedFolderId}`);
 
     // Sort files: extract session number and sort numerically
     const sortedFiles = files.sort((a: any, b: any) => {
@@ -214,4 +215,40 @@ function parseSessionNumber(name: string): number {
   const numMatch = name.match(/([\d.]+)/);
   if (numMatch) return parseFloat(numMatch[1]);
   return 999;
+}
+
+function normalizeDriveFolderId(input: unknown): string | null {
+  if (typeof input !== 'string') return null;
+
+  const value = input.trim();
+  if (!value) return null;
+
+  // Already a raw Drive ID
+  if (/^[a-zA-Z0-9_-]+$/.test(value)) {
+    return value;
+  }
+
+  // Typical folder URL: /drive/folders/<id>
+  const pathMatch = value.match(/\/folders\/([a-zA-Z0-9_-]+)/i);
+  if (pathMatch?.[1]) {
+    return pathMatch[1];
+  }
+
+  // Fallback parser (also supports ?id=<id>)
+  try {
+    const parsed = new URL(value);
+    const parsedPathMatch = parsed.pathname.match(/\/folders\/([a-zA-Z0-9_-]+)/i);
+    if (parsedPathMatch?.[1]) {
+      return parsedPathMatch[1];
+    }
+
+    const idParam = parsed.searchParams.get('id');
+    if (idParam && /^[a-zA-Z0-9_-]+$/.test(idParam)) {
+      return idParam;
+    }
+  } catch {
+    // Ignore URL parsing errors and return null below.
+  }
+
+  return null;
 }
