@@ -76,7 +76,7 @@ export default function Characters() {
   // NPC form state
   const [npcForm, setNpcForm] = useState({
     name: '', Raza: '', Arquetipo: '', Elemento: '', Esencia: '',
-    Edad: 0, Estado: 'Unknown', Alignment: 'Neutral', ID_Campaña: ''
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: ''
   });
 
   useEffect(() => {
