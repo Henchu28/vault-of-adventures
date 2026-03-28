@@ -108,7 +108,7 @@ export default function Characters() {
 
   const resetNpcForm = () => setNpcForm({
     name: '', Raza: '', Arquetipo: '', Elemento: '', Esencia: '',
-    Edad: 0, Estado: 'Unknown', Alignment: 'Neutral', ID_Campaña: ''
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: ''
   });
 
   const handleCreateCharacter = async () => {
