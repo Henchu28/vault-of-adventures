@@ -148,9 +148,9 @@ export default function Characters() {
       Arquetipo: npcForm.Arquetipo || null,
       Elemento: npcForm.Elemento || null,
       Esencia: npcForm.Esencia || null,
+      Organización: npcForm.Organización || 'Unknown',
       Edad: npcForm.Edad || 0,
       Estado: npcForm.Estado || 'Unknown',
-      Alignment: npcForm.Alignment || 'Neutral',
       ID_Campaña: npcForm.ID_Campaña ? Number(npcForm.ID_Campaña) : null,
     });
     if (error) {
