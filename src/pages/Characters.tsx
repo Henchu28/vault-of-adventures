@@ -319,11 +319,12 @@ export default function Characters() {
         </Select>
       </div>
       <div>
-        <Label>Alineamiento</Label>
-        <Select value={npcForm.Alignment} onValueChange={(v) => setNpcForm({...npcForm, Alignment: v})}>
+        <Label>Organización</Label>
+        <Select value={npcForm.Organización} onValueChange={(v) => setNpcForm({...npcForm, Organización: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
           <SelectContent>
-            {ALIGNMENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            <SelectItem value="Unknown">Sin organización</SelectItem>
+            {organizations.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
