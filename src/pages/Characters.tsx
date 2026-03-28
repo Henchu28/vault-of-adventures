@@ -31,9 +31,9 @@ interface NPC {
   Arquetipo: string | null;
   Elemento: string | null;
   Esencia: string | null;
+  Organización: string | null;
   Edad: number;
   Estado: string | null;
-  Alignment: string | null;
   ID_Campaña: number | null;
 }
 
