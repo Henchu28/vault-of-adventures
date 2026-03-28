@@ -150,7 +150,6 @@ export type Database = {
       }
       npcs: {
         Row: {
-          Alignment: string | null
           Arquetipo: string | null
           Edad: number
           Elemento: string | null
@@ -159,10 +158,10 @@ export type Database = {
           id: number
           ID_Campaña: number | null
           name: string
+          Organización: string | null
           Raza: string | null
         }
         Insert: {
-          Alignment?: string | null
           Arquetipo?: string | null
           Edad?: number
           Elemento?: string | null
@@ -171,10 +170,10 @@ export type Database = {
           id?: number
           ID_Campaña?: number | null
           name: string
+          Organización?: string | null
           Raza?: string | null
         }
         Update: {
-          Alignment?: string | null
           Arquetipo?: string | null
           Edad?: number
           Elemento?: string | null
@@ -183,6 +182,7 @@ export type Database = {
           id?: number
           ID_Campaña?: number | null
           name?: string
+          Organización?: string | null
           Raza?: string | null
         }
         Relationships: [
@@ -192,6 +192,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "campaigns"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "npcs_Organización_fkey"
+            columns: ["Organización"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["org_name"]
           },
         ]
       }
