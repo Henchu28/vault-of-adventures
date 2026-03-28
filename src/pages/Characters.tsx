@@ -31,9 +31,9 @@ interface NPC {
   Arquetipo: string | null;
   Elemento: string | null;
   Esencia: string | null;
+  Organización: string | null;
   Edad: number;
   Estado: string | null;
-  Alignment: string | null;
   ID_Campaña: number | null;
 }
 
@@ -45,7 +45,7 @@ interface Campaign {
 const ARQUETIPOS = ['Emisor', 'Modulador', 'Canalizador', 'Invocador', 'Focalizador', 'Compuesto'];
 const ELEMENTOS = ['Fuego', 'Hielo', 'Tierra', 'Planta', 'Luz', 'Oscuridad', 'Viento', 'Electricidad', 'Espiritual'];
 const ESENCIAS = ['Nominancia', 'Transmutación', 'Distorsión', 'Cronomancia', 'Dimensiología', 'Sincronimia', 'Emblemancia', 'Vacío'];
-const ALIGNMENTS = ['Legal Bueno', 'Neutral Bueno', 'Caótico Bueno', 'Legal Neutral', 'Neutral', 'Caótico Neutral', 'Legal Malvado', 'Neutral Malvado', 'Caótico Malvado'];
+
 
 export default function Characters() {
   const { isMaster } = useAuth();
@@ -76,7 +76,7 @@ export default function Characters() {
   // NPC form state
   const [npcForm, setNpcForm] = useState({
     name: '', Raza: '', Arquetipo: '', Elemento: '', Esencia: '',
-    Edad: 0, Estado: 'Unknown', Alignment: 'Neutral', ID_Campaña: ''
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: ''
   });
 
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function Characters() {
 
   const resetNpcForm = () => setNpcForm({
     name: '', Raza: '', Arquetipo: '', Elemento: '', Esencia: '',
-    Edad: 0, Estado: 'Unknown', Alignment: 'Neutral', ID_Campaña: ''
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: ''
   });
 
   const handleCreateCharacter = async () => {
@@ -148,9 +148,9 @@ export default function Characters() {
       Arquetipo: npcForm.Arquetipo || null,
       Elemento: npcForm.Elemento || null,
       Esencia: npcForm.Esencia || null,
+      Organización: npcForm.Organización || 'Unknown',
       Edad: npcForm.Edad || 0,
       Estado: npcForm.Estado || 'Unknown',
-      Alignment: npcForm.Alignment || 'Neutral',
       ID_Campaña: npcForm.ID_Campaña ? Number(npcForm.ID_Campaña) : null,
     });
     if (error) {
@@ -319,11 +319,12 @@ export default function Characters() {
         </Select>
       </div>
       <div>
-        <Label>Alineamiento</Label>
-        <Select value={npcForm.Alignment} onValueChange={(v) => setNpcForm({...npcForm, Alignment: v})}>
+        <Label>Organización</Label>
+        <Select value={npcForm.Organización} onValueChange={(v) => setNpcForm({...npcForm, Organización: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
           <SelectContent>
-            {ALIGNMENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            <SelectItem value="Unknown">Sin organización</SelectItem>
+            {organizations.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -513,7 +514,7 @@ export default function Characters() {
                     <p><span className="font-medium">Elemento:</span> {npc.Elemento}</p>
                     <p><span className="font-medium">Esencia:</span> {npc.Esencia}</p>
                     <p><span className="font-medium">Edad:</span> {npc.Edad}</p>
-                    <p><span className="font-medium">Alineamiento:</span> {npc.Alignment}</p>
+                    <p><span className="font-medium">Organización:</span> {npc.Organización}</p>
                     <p><span className="font-medium">Estado:</span> {npc.Estado}</p>
                   </div>
                 </CardContent>
