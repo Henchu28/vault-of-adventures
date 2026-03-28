@@ -514,7 +514,7 @@ export default function Characters() {
                     <p><span className="font-medium">Elemento:</span> {npc.Elemento}</p>
                     <p><span className="font-medium">Esencia:</span> {npc.Esencia}</p>
                     <p><span className="font-medium">Edad:</span> {npc.Edad}</p>
-                    <p><span className="font-medium">Alineamiento:</span> {npc.Alignment}</p>
+                    <p><span className="font-medium">Organización:</span> {npc.Organización}</p>
                     <p><span className="font-medium">Estado:</span> {npc.Estado}</p>
                   </div>
                 </CardContent>
