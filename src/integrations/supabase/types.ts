@@ -94,18 +94,21 @@ export type Database = {
           campaing_id: number | null
           description: string | null
           id: number
+          image_url: string | null
           name: string
         }
         Insert: {
           campaing_id?: number | null
           description?: string | null
           id?: number
+          image_url?: string | null
           name: string
         }
         Update: {
           campaing_id?: number | null
           description?: string | null
           id?: number
+          image_url?: string | null
           name?: string
         }
         Relationships: [
