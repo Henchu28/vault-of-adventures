@@ -170,7 +170,7 @@ export default function Maps() {
     return <div className="flex justify-center items-center min-h-[400px]">Loading maps...</div>;
   }
 
-  const MapForm = ({ isEdit }: { isEdit: boolean }) => (
+  const mapFormJSX = (isEdit: boolean) => (
     <div className="space-y-4">
       <div>
         <Label>Nombre *</Label>
@@ -222,7 +222,7 @@ export default function Maps() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Nuevo Mapa</DialogTitle></DialogHeader>
-              <MapForm isEdit={false} />
+              {mapFormJSX(false)}
             </DialogContent>
           </Dialog>
         )}
@@ -232,7 +232,7 @@ export default function Maps() {
       <Dialog open={!!editingMap} onOpenChange={(open) => { if (!open) { setEditingMap(null); resetForm(); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Editar Mapa</DialogTitle></DialogHeader>
-          <MapForm isEdit={true} />
+          {mapFormJSX(true)}
         </DialogContent>
       </Dialog>
 

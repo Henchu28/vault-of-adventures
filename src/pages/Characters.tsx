@@ -253,13 +253,7 @@ export default function Characters() {
     return <div className="flex justify-center items-center min-h-[400px]">Loading characters...</div>;
   }
 
-  const EntityForm = ({ form, setForm, onSubmit, isEdit, type }: {
-    form: typeof defaultCharForm;
-    setForm: (f: typeof defaultCharForm) => void;
-    onSubmit: () => void;
-    isEdit: boolean;
-    type: 'character' | 'npc';
-  }) => (
+  const entityFormJSX = (form: typeof defaultCharForm, setForm: (f: typeof defaultCharForm) => void, onSubmit: () => void, isEdit: boolean, type: 'character' | 'npc') => (
     <div className="grid grid-cols-2 gap-4">
       <div className="col-span-2">
         <Label>Nombre *</Label>
@@ -344,7 +338,7 @@ export default function Characters() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader><DialogTitle>Nuevo Personaje</DialogTitle></DialogHeader>
-                <EntityForm form={charForm} setForm={setCharForm} onSubmit={handleCreateCharacter} isEdit={false} type="character" />
+                {entityFormJSX(charForm, setCharForm, handleCreateCharacter, false, 'character')}
               </DialogContent>
             </Dialog>
             
@@ -354,7 +348,7 @@ export default function Characters() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader><DialogTitle>Nuevo NPC</DialogTitle></DialogHeader>
-                <EntityForm form={npcForm} setForm={setNpcForm} onSubmit={handleCreateNPC} isEdit={false} type="npc" />
+                {entityFormJSX(npcForm, setNpcForm, handleCreateNPC, false, 'npc')}
               </DialogContent>
             </Dialog>
           </div>
@@ -365,7 +359,7 @@ export default function Characters() {
       <Dialog open={!!editingCharacter} onOpenChange={(open) => { if (!open) { setEditingCharacter(null); resetCharForm(); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Editar Personaje</DialogTitle></DialogHeader>
-          <EntityForm form={charForm} setForm={setCharForm} onSubmit={handleEditCharacter} isEdit={true} type="character" />
+          {entityFormJSX(charForm, setCharForm, handleEditCharacter, true, 'character')}
         </DialogContent>
       </Dialog>
 
@@ -373,7 +367,7 @@ export default function Characters() {
       <Dialog open={!!editingNPC} onOpenChange={(open) => { if (!open) { setEditingNPC(null); resetNpcForm(); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Editar NPC</DialogTitle></DialogHeader>
-          <EntityForm form={npcForm} setForm={setNpcForm} onSubmit={handleEditNPC} isEdit={true} type="npc" />
+          {entityFormJSX(npcForm, setNpcForm, handleEditNPC, true, 'npc')}
         </DialogContent>
       </Dialog>
 

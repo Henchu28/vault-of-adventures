@@ -144,7 +144,7 @@ export default function Campaigns() {
     return <div className="flex justify-center items-center min-h-[400px]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  const CampaignForm = ({ isEdit }: { isEdit: boolean }) => (
+  const campaignFormJSX = (isEdit: boolean) => (
     <div className="space-y-4">
       <div><Label>Nombre *</Label><Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Nombre de la campaña" /></div>
       <div><Label>Descripción</Label><Input value={formDescription} onChange={(e) => setFormDescription(e.target.value)} placeholder="Descripción (opcional)" /></div>
@@ -207,7 +207,7 @@ export default function Campaigns() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Crear Nueva Campaña</DialogTitle></DialogHeader>
-              <CampaignForm isEdit={false} />
+              {campaignFormJSX(false)}
             </DialogContent>
           </Dialog>
         )}
@@ -217,7 +217,7 @@ export default function Campaigns() {
       <Dialog open={!!editingCampaign} onOpenChange={(open) => { if (!open) { setEditingCampaign(null); resetForm(); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Editar Campaña</DialogTitle></DialogHeader>
-          <CampaignForm isEdit={true} />
+          {campaignFormJSX(true)}
         </DialogContent>
       </Dialog>
 
