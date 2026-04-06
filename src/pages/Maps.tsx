@@ -222,7 +222,7 @@ export default function Maps() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Nuevo Mapa</DialogTitle></DialogHeader>
-              <MapForm isEdit={false} />
+              {mapFormJSX(false)}
             </DialogContent>
           </Dialog>
         )}
