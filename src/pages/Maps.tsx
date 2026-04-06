@@ -232,7 +232,7 @@ export default function Maps() {
       <Dialog open={!!editingMap} onOpenChange={(open) => { if (!open) { setEditingMap(null); resetForm(); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Editar Mapa</DialogTitle></DialogHeader>
-          <MapForm isEdit={true} />
+          {mapFormJSX(true)}
         </DialogContent>
       </Dialog>
 

@@ -367,7 +367,7 @@ export default function Characters() {
       <Dialog open={!!editingNPC} onOpenChange={(open) => { if (!open) { setEditingNPC(null); resetNpcForm(); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Editar NPC</DialogTitle></DialogHeader>
-          <EntityForm form={npcForm} setForm={setNpcForm} onSubmit={handleEditNPC} isEdit={true} type="npc" />
+          {entityFormJSX(npcForm, setNpcForm, handleEditNPC, true, 'npc')}
         </DialogContent>
       </Dialog>
 

@@ -217,7 +217,7 @@ export default function Campaigns() {
       <Dialog open={!!editingCampaign} onOpenChange={(open) => { if (!open) { setEditingCampaign(null); resetForm(); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Editar Campaña</DialogTitle></DialogHeader>
-          <CampaignForm isEdit={true} />
+          {campaignFormJSX(true)}
         </DialogContent>
       </Dialog>
 
