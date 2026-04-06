@@ -338,7 +338,7 @@ export default function Characters() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader><DialogTitle>Nuevo Personaje</DialogTitle></DialogHeader>
-                <EntityForm form={charForm} setForm={setCharForm} onSubmit={handleCreateCharacter} isEdit={false} type="character" />
+                {entityFormJSX(charForm, setCharForm, handleCreateCharacter, false, 'character')}
               </DialogContent>
             </Dialog>
             
