@@ -170,7 +170,7 @@ export default function Maps() {
     return <div className="flex justify-center items-center min-h-[400px]">Loading maps...</div>;
   }
 
-  const MapForm = ({ isEdit }: { isEdit: boolean }) => (
+  const mapFormJSX = (isEdit: boolean) => (
     <div className="space-y-4">
       <div>
         <Label>Nombre *</Label>

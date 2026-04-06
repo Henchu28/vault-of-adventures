@@ -253,13 +253,7 @@ export default function Characters() {
     return <div className="flex justify-center items-center min-h-[400px]">Loading characters...</div>;
   }
 
-  const EntityForm = ({ form, setForm, onSubmit, isEdit, type }: {
-    form: typeof defaultCharForm;
-    setForm: (f: typeof defaultCharForm) => void;
-    onSubmit: () => void;
-    isEdit: boolean;
-    type: 'character' | 'npc';
-  }) => (
+  const entityFormJSX = (form: typeof defaultCharForm, setForm: (f: typeof defaultCharForm) => void, onSubmit: () => void, isEdit: boolean, type: 'character' | 'npc') => (
     <div className="grid grid-cols-2 gap-4">
       <div className="col-span-2">
         <Label>Nombre *</Label>
