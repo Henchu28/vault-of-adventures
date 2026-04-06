@@ -348,7 +348,7 @@ export default function Characters() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader><DialogTitle>Nuevo NPC</DialogTitle></DialogHeader>
-                <EntityForm form={npcForm} setForm={setNpcForm} onSubmit={handleCreateNPC} isEdit={false} type="npc" />
+                {entityFormJSX(npcForm, setNpcForm, handleCreateNPC, false, 'npc')}
               </DialogContent>
             </Dialog>
           </div>
