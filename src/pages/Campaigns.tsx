@@ -207,7 +207,7 @@ export default function Campaigns() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Crear Nueva Campaña</DialogTitle></DialogHeader>
-              <CampaignForm isEdit={false} />
+              {campaignFormJSX(false)}
             </DialogContent>
           </Dialog>
         )}
