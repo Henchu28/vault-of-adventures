@@ -359,7 +359,7 @@ export default function Characters() {
       <Dialog open={!!editingCharacter} onOpenChange={(open) => { if (!open) { setEditingCharacter(null); resetCharForm(); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Editar Personaje</DialogTitle></DialogHeader>
-          <EntityForm form={charForm} setForm={setCharForm} onSubmit={handleEditCharacter} isEdit={true} type="character" />
+          {entityFormJSX(charForm, setCharForm, handleEditCharacter, true, 'character')}
         </DialogContent>
       </Dialog>
 
