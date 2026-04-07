@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, BookOpen, Folder, FileText, ArrowLeft, Loader2, ExternalLink, ChevronRight, FileSpreadsheet, FileType } from 'lucide-react';
+import { Plus, Search, BookOpen, Folder, FileText, ArrowLeft, Loader2, ChevronRight, FileSpreadsheet, FileType } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentEditor } from '@/components/notes/DocumentEditor';
 
@@ -266,11 +266,6 @@ export default function Notes() {
                           <p className="text-xs text-muted-foreground">{new Date(file.modifiedTime).toLocaleDateString('es-ES')}</p>
                         )}
                       </div>
-                      {file.webViewLink && (
-                        <a href={file.webViewLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
-                          <ExternalLink className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                        </a>
-                      )}
                     </CardContent>
                   </Card>
                 ))}
