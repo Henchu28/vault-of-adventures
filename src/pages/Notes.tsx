@@ -266,11 +266,6 @@ export default function Notes() {
                           <p className="text-xs text-muted-foreground">{new Date(file.modifiedTime).toLocaleDateString('es-ES')}</p>
                         )}
                       </div>
-                      {file.webViewLink && (
-                        <a href={file.webViewLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
-                          <ExternalLink className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                        </a>
-                      )}
                     </CardContent>
                   </Card>
                 ))}
