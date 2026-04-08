@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search, BookOpen, Folder, FileText, ArrowLeft, Loader2, ChevronRight, FileSpreadsheet, FileType } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentEditor } from '@/components/notes/DocumentEditor';
+import { DriveFileViewer } from '@/components/notes/DriveFileViewer';
 
 const ROOT_FOLDER_ID = '1djoI4FuTcUO2lzEH1y6TQ6OebsA4j51F';
 
@@ -70,6 +71,7 @@ export default function Notes() {
   // Documents
   const [documents, setDocuments] = useState<Document[]>([]);
   const [editingDoc, setEditingDoc] = useState<Document | null>(null);
+  const [viewingDriveFile, setViewingDriveFile] = useState<DriveItem | null>(null);
 
   // Create dialog
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -140,6 +142,20 @@ export default function Notes() {
       setEditingDoc(data as Document);
     }
   };
+
+  // If viewing a Drive file
+  if (viewingDriveFile) {
+    return (
+      <div className="space-y-6">
+        <DriveFileViewer
+          fileId={viewingDriveFile.id}
+          fileName={viewingDriveFile.name}
+          mimeType={viewingDriveFile.mimeType}
+          onBack={() => setViewingDriveFile(null)}
+        />
+      </div>
+    );
+  }
 
   // If editing a document, show the editor
   if (editingDoc) {
@@ -257,7 +273,7 @@ export default function Notes() {
               <h2 className="text-lg font-semibold text-muted-foreground">Archivos de Drive (solo lectura)</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredFiles.map(file => (
-                  <Card key={file.id} className="hover:shadow-md transition-all">
+                  <Card key={file.id} className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all" onClick={() => setViewingDriveFile(file)}>
                     <CardContent className="flex items-center gap-3 p-4">
                       <span className="text-2xl shrink-0">{getIcon(file.mimeType)}</span>
                       <div className="flex-1 min-w-0">
