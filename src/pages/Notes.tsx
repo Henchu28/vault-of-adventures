@@ -273,7 +273,7 @@ export default function Notes() {
               <h2 className="text-lg font-semibold text-muted-foreground">Archivos de Drive (solo lectura)</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredFiles.map(file => (
-                  <Card key={file.id} className="hover:shadow-md transition-all">
+                  <Card key={file.id} className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all" onClick={() => setViewingDriveFile(file)}>
                     <CardContent className="flex items-center gap-3 p-4">
                       <span className="text-2xl shrink-0">{getIcon(file.mimeType)}</span>
                       <div className="flex-1 min-w-0">
