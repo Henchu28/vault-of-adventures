@@ -71,6 +71,7 @@ export default function Notes() {
   // Documents
   const [documents, setDocuments] = useState<Document[]>([]);
   const [editingDoc, setEditingDoc] = useState<Document | null>(null);
+  const [viewingDriveFile, setViewingDriveFile] = useState<DriveItem | null>(null);
 
   // Create dialog
   const [isCreateOpen, setIsCreateOpen] = useState(false);
