@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search, BookOpen, Folder, FileText, ArrowLeft, Loader2, ChevronRight, FileSpreadsheet, FileType } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentEditor } from '@/components/notes/DocumentEditor';
+import { DriveFileViewer } from '@/components/notes/DriveFileViewer';
 
 const ROOT_FOLDER_ID = '1djoI4FuTcUO2lzEH1y6TQ6OebsA4j51F';
 
