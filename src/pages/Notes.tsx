@@ -143,6 +143,20 @@ export default function Notes() {
     }
   };
 
+  // If viewing a Drive file
+  if (viewingDriveFile) {
+    return (
+      <div className="space-y-6">
+        <DriveFileViewer
+          fileId={viewingDriveFile.id}
+          fileName={viewingDriveFile.name}
+          mimeType={viewingDriveFile.mimeType}
+          onBack={() => setViewingDriveFile(null)}
+        />
+      </div>
+    );
+  }
+
   // If editing a document, show the editor
   if (editingDoc) {
     return (
