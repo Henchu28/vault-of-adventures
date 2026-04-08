@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Sword, Shield, ArrowLeft, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Sword, Shield, ArrowLeft, Loader2, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import campaignsImg from '@/assets/campaigns-card.jpg';
 
@@ -39,17 +38,15 @@ export default function Campaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [activeSessionIndex, setActiveSessionIndex] = useState<number | null>(null);
 
   useEffect(() => { fetchCampaigns(); }, []);
 
   const fetchCampaigns = async () => {
     setLoading(true);
     const { data, error } = await supabase.from('campaigns').select('*').order('id', { ascending: true });
-    if (error) {
-      toast({ title: "Error", description: "Failed to fetch campaigns", variant: "destructive" });
-    } else {
-      setCampaigns(data || []);
-    }
+    if (error) { toast({ title: "Error", description: "Failed to fetch campaigns", variant: "destructive" }); }
+    else { setCampaigns(data || []); }
     setLoading(false);
   };
 
@@ -58,57 +55,29 @@ export default function Campaigns() {
     return match ? match[1] : input.trim();
   };
 
-  const resetForm = () => {
-    setFormName('');
-    setFormDescription('');
-    setFormDriveFolderId('');
-  };
+  const resetForm = () => { setFormName(''); setFormDescription(''); setFormDriveFolderId(''); };
 
   const handleCreate = async () => {
     if (!formName.trim()) return;
     const folderId = formDriveFolderId.trim() ? extractFolderId(formDriveFolderId) : null;
-    const { error } = await supabase.from('campaigns').insert({
-      name: formName.trim(),
-      description: formDescription.trim() || null,
-      drive_folder_id: folderId,
-    });
-    if (error) {
-      toast({ title: "Error", description: "No se pudo crear la campaña", variant: "destructive" });
-    } else {
-      toast({ title: "¡Éxito!", description: "Campaña creada correctamente" });
-      resetForm();
-      setIsDialogOpen(false);
-      fetchCampaigns();
-    }
+    const { error } = await supabase.from('campaigns').insert({ name: formName.trim(), description: formDescription.trim() || null, drive_folder_id: folderId });
+    if (error) { toast({ title: "Error", description: "No se pudo crear la campaña", variant: "destructive" }); }
+    else { toast({ title: "¡Éxito!", description: "Campaña creada correctamente" }); resetForm(); setIsDialogOpen(false); fetchCampaigns(); }
   };
 
   const handleEdit = async () => {
     if (!editingCampaign || !formName.trim()) return;
     const folderId = formDriveFolderId.trim() ? extractFolderId(formDriveFolderId) : null;
-    const { error } = await supabase.from('campaigns').update({
-      name: formName.trim(),
-      description: formDescription.trim() || null,
-      drive_folder_id: folderId,
-    }).eq('id', editingCampaign.id);
-    if (error) {
-      toast({ title: "Error", description: "No se pudo actualizar la campaña", variant: "destructive" });
-    } else {
-      toast({ title: "¡Éxito!", description: "Campaña actualizada correctamente" });
-      resetForm();
-      setEditingCampaign(null);
-      fetchCampaigns();
-    }
+    const { error } = await supabase.from('campaigns').update({ name: formName.trim(), description: formDescription.trim() || null, drive_folder_id: folderId }).eq('id', editingCampaign.id);
+    if (error) { toast({ title: "Error", description: "No se pudo actualizar la campaña", variant: "destructive" }); }
+    else { toast({ title: "¡Éxito!", description: "Campaña actualizada correctamente" }); resetForm(); setEditingCampaign(null); fetchCampaigns(); }
   };
 
   const handleDelete = async (campaign: Campaign) => {
     if (!isMaster) return;
     const { error } = await supabase.from('campaigns').delete().eq('id', campaign.id);
-    if (error) {
-      toast({ title: "Error", description: "No se pudo eliminar la campaña", variant: "destructive" });
-    } else {
-      toast({ title: "¡Éxito!", description: "Campaña eliminada correctamente" });
-      fetchCampaigns();
-    }
+    if (error) { toast({ title: "Error", description: "No se pudo eliminar la campaña", variant: "destructive" }); }
+    else { toast({ title: "¡Éxito!", description: "Campaña eliminada correctamente" }); fetchCampaigns(); }
   };
 
   const openEdit = (campaign: Campaign) => {
@@ -121,22 +90,15 @@ export default function Campaigns() {
   const handleSelectCampaign = async (campaign: Campaign) => {
     setSelectedCampaign(campaign);
     setSessions([]);
+    setActiveSessionIndex(null);
     if (!campaign.drive_folder_id) return;
     setLoadingSessions(true);
     try {
-      const { data, error } = await supabase.functions.invoke('drive-sessions', {
-        body: { folderId: campaign.drive_folder_id },
-      });
-      if (error) {
-        toast({ title: "Error", description: "No se pudieron cargar las sesiones", variant: "destructive" });
-      } else if (data?.success) {
-        setSessions(data.sessions || []);
-      } else {
-        toast({ title: "Error", description: data?.error || "Error desconocido", variant: "destructive" });
-      }
-    } catch {
-      toast({ title: "Error", description: "Error al conectar con Drive", variant: "destructive" });
-    }
+      const { data, error } = await supabase.functions.invoke('drive-sessions', { body: { folderId: campaign.drive_folder_id } });
+      if (error) { toast({ title: "Error", description: "No se pudieron cargar las sesiones", variant: "destructive" }); }
+      else if (data?.success) { setSessions(data.sessions || []); }
+      else { toast({ title: "Error", description: data?.error || "Error desconocido", variant: "destructive" }); }
+    } catch { toast({ title: "Error", description: "Error al conectar con Drive", variant: "destructive" }); }
     setLoadingSessions(false);
   };
 
@@ -153,11 +115,16 @@ export default function Campaigns() {
     </div>
   );
 
+  // Campaign detail view
   if (selectedCampaign) {
+    const lastSession = sessions.length > 0 ? sessions[sessions.length - 1] : null;
+    const activeSession = activeSessionIndex !== null ? sessions[activeSessionIndex] : null;
+
     return (
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => setSelectedCampaign(null)}>
+          <Button variant="ghost" size="icon" onClick={() => { setSelectedCampaign(null); setActiveSessionIndex(null); }}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
@@ -165,6 +132,7 @@ export default function Campaigns() {
             {selectedCampaign.description && <p className="text-muted-foreground italic mt-1">"{selectedCampaign.description}"</p>}
           </div>
         </div>
+
         {!selectedCampaign.drive_folder_id ? (
           <div className="text-center py-12">
             <Sword className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
@@ -180,17 +148,67 @@ export default function Campaigns() {
             <Sword className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground">No se encontraron sesiones</h3>
           </div>
+        ) : activeSession ? (
+          /* Session content view */
+          <div className="space-y-6">
+            <Button variant="outline" size="sm" onClick={() => setActiveSessionIndex(null)}>
+              <ArrowLeft className="w-4 h-4 mr-2" />Volver a la lista
+            </Button>
+            <h2 className="text-2xl font-bold">{activeSession.name}</h2>
+            <div className="prose prose-sm dark:prose-invert max-w-none overflow-auto bg-card border border-border rounded-lg p-6">
+              <div dangerouslySetInnerHTML={{ __html: activeSession.content }} />
+            </div>
+            <div className="flex justify-between pt-4">
+              {activeSessionIndex > 0 ? (
+                <Button variant="outline" onClick={() => setActiveSessionIndex(activeSessionIndex - 1)}>
+                  <ChevronLeft className="w-4 h-4 mr-2" />Sesión anterior
+                </Button>
+              ) : <div />}
+              {activeSessionIndex < sessions.length - 1 ? (
+                <Button variant="outline" onClick={() => setActiveSessionIndex(activeSessionIndex + 1)}>
+                  Siguiente sesión<ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : <div />}
+            </div>
+          </div>
         ) : (
-          <Accordion type="single" collapsible className="w-full space-y-2">
-            {sessions.map((session, idx) => (
-              <AccordionItem key={idx} value={`session-${idx}`} className="border border-border rounded-lg bg-card px-4">
-                <AccordionTrigger className="text-lg font-semibold hover:no-underline">{session.name}</AccordionTrigger>
-                <AccordionContent>
-                  <div className="prose prose-sm dark:prose-invert max-w-none overflow-auto" dangerouslySetInnerHTML={{ __html: session.content }} />
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          /* Session list view */
+          <div className="space-y-6">
+            {lastSession && (
+              <Card
+                className="border-2 border-primary/30 cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => setActiveSessionIndex(sessions.length - 1)}
+              >
+                <CardHeader>
+                  <div className="flex items-center gap-2 text-primary">
+                    <BookOpen className="w-5 h-5" />
+                    <span className="text-xs font-medium uppercase tracking-wide">Última sesión</span>
+                  </div>
+                  <CardTitle className="text-xl">{lastSession.name}</CardTitle>
+                </CardHeader>
+              </Card>
+            )}
+
+            <h3 className="text-lg font-semibold text-muted-foreground">Todas las sesiones</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {sessions.map((session, idx) => (
+                <Card
+                  key={idx}
+                  className="cursor-pointer hover:shadow-md hover:border-primary/20 transition-all"
+                  onClick={() => setActiveSessionIndex(idx)}
+                >
+                  <CardHeader className="py-4">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 font-mono">
+                        {session.sessionNumber || idx + 1}
+                      </span>
+                      {session.name}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     );
@@ -202,23 +220,14 @@ export default function Campaigns() {
         <h1 className="text-3xl font-bold">Campañas</h1>
         {isMaster && (
           <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button><Plus className="w-4 h-4 mr-2" />Nueva Campaña</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Crear Nueva Campaña</DialogTitle></DialogHeader>
-              {campaignFormJSX(false)}
-            </DialogContent>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Nueva Campaña</Button></DialogTrigger>
+            <DialogContent><DialogHeader><DialogTitle>Crear Nueva Campaña</DialogTitle></DialogHeader>{campaignFormJSX(false)}</DialogContent>
           </Dialog>
         )}
       </div>
 
-      {/* Edit Campaign Dialog */}
       <Dialog open={!!editingCampaign} onOpenChange={(open) => { if (!open) { setEditingCampaign(null); resetForm(); } }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Editar Campaña</DialogTitle></DialogHeader>
-          {campaignFormJSX(true)}
-        </DialogContent>
+        <DialogContent><DialogHeader><DialogTitle>Editar Campaña</DialogTitle></DialogHeader>{campaignFormJSX(true)}</DialogContent>
       </Dialog>
 
       {campaigns.length === 0 ? (
@@ -230,22 +239,14 @@ export default function Campaigns() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {campaigns.map((campaign) => (
-            <Card
-              key={campaign.id}
-              className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20 cursor-pointer relative"
-              onClick={() => handleSelectCampaign(campaign)}
-            >
+            <Card key={campaign.id} className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20 cursor-pointer relative" onClick={() => handleSelectCampaign(campaign)}>
               <div className="h-48 bg-cover bg-center relative" style={{ backgroundImage: `url(${campaignsImg})` }}>
                 <div className="absolute inset-0 bg-primary/40" />
                 <div className="absolute top-4 left-4"><Shield className="w-8 h-8 text-primary-foreground" /></div>
                 {isMaster && (
                   <div className="absolute top-4 right-4 flex space-x-1" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="secondary" size="sm" onClick={() => openEdit(campaign)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(campaign)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => openEdit(campaign)}><Edit className="w-4 h-4" /></Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(campaign)}><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 )}
               </div>
