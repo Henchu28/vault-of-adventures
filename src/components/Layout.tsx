@@ -10,7 +10,8 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
-import { LogOut, Home, Users, Sword, Map, Music, BookOpen, Dice6, Sparkles } from 'lucide-react';
+import { LogOut, Home, Users, Sword, Map, Music, BookOpen, Sparkles } from 'lucide-react';
+import { D20Roller } from '@/components/D20Roller';
 import headerBg from '@/assets/header-bg.jpg';
 
 interface LayoutProps {
@@ -50,7 +51,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-2">
-                <Dice6 className="w-8 h-8 text-primary-foreground" />
+                <D20Roller />
                 <h1 className="text-2xl font-bold text-primary-foreground">
                   D&D Campaign Manager
                 </h1>
