@@ -44,7 +44,7 @@ export function D20Roller() {
       if (value === 20) spawnParticles('coins');
       if (value === 1) spawnParticles('rocks');
 
-      setTimeout(() => setShowResult(false), 3000);
+      setTimeout(() => setShowResult(false), 5000);
     }, 1200);
   }, [rolling, spawnParticles]);
 
@@ -102,7 +102,7 @@ export function D20Roller() {
             textAnchor="middle"
             dominantBaseline="middle"
             className="fill-primary-foreground font-bold"
-            fontSize={showResult && result ? (result >= 10 ? "18" : "22") : "16"}
+            fontSize={showResult && result ? (result >= 10 ? "24" : "28") : "22"}
           >
             {showResult && result ? result : '20'}
           </text>
