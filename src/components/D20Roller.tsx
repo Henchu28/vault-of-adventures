@@ -9,7 +9,11 @@ interface Particle {
   size: number;
 }
 
-export function D20Roller() {
+interface D20RollerProps {
+  size?: 'sm' | 'lg';
+}
+
+export function D20Roller({ size = 'sm' }: D20RollerProps) {
   const [rolling, setRolling] = useState(false);
   const [result, setResult] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -48,9 +52,14 @@ export function D20Roller() {
     }, 1200);
   }, [rolling, spawnParticles]);
 
+  const dimensions = size === 'lg' ? 'w-14 h-14' : 'w-8 h-8';
+  const svgSize = size === 'lg' ? 'w-14 h-14' : 'w-8 h-8';
+  const fontSize = size === 'lg'
+    ? (showResult && result ? (result >= 10 ? '32' : '38') : '30')
+    : (showResult && result ? (result >= 10 ? '24' : '28') : '22');
+
   return (
     <>
-      {/* Falling particles */}
       {particles.length > 0 && (
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
           {particles.map((p) => (
@@ -71,44 +80,39 @@ export function D20Roller() {
         </div>
       )}
 
-      {/* D20 button */}
       <button
         onClick={roll}
-        className="relative w-8 h-8 flex items-center justify-center cursor-pointer group"
+        className={`relative ${dimensions} flex items-center justify-center cursor-pointer group`}
         title="Roll a D20!"
       >
         <svg
           viewBox="0 0 100 100"
-          className={`w-8 h-8 transition-transform ${rolling ? 'animate-dice-spin' : 'group-hover:scale-110'}`}
+          className={`${svgSize} transition-transform ${rolling ? 'animate-dice-spin' : 'group-hover:scale-110'}`}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* D20 icosahedron shape */}
           <polygon
             points="50,5 95,35 80,90 20,90 5,35"
             className="fill-primary-foreground/20 stroke-primary-foreground"
             strokeWidth="2"
           />
-          {/* Inner lines */}
           <line x1="50" y1="5" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
           <line x1="5" y1="35" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
           <line x1="95" y1="35" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
           <line x1="20" y1="90" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
           <line x1="80" y1="90" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
-          {/* Number display */}
           <text
             x="50"
             y="48"
             textAnchor="middle"
             dominantBaseline="middle"
             className="fill-primary-foreground font-bold"
-            fontSize={showResult && result ? (result >= 10 ? "24" : "28") : "22"}
+            fontSize={fontSize}
           >
             {showResult && result ? result : '20'}
           </text>
         </svg>
 
-        {/* Result popup */}
         {showResult && result && (
           <span
             className={`absolute -bottom-8 left-1/2 -translate-x-1/2 text-sm font-bold px-2 py-0.5 rounded-full whitespace-nowrap animate-scale-in ${
