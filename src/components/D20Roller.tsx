@@ -16,11 +16,11 @@ export function D20Roller() {
   const [particles, setParticles] = useState<Particle[]>([]);
 
   const spawnParticles = useCallback((type: 'coins' | 'rocks') => {
-    const emoji = type === 'coins' ? '🪙' : '🪨';
+    const emojis = type === 'coins' ? ['🎉', '⭐', '✨', '🏆', '💎'] : ['🗡️', '💀', '🔥', '☠️'];
     const newParticles: Particle[] = Array.from({ length: 30 }, (_, i) => ({
       id: Date.now() + i,
       x: Math.random() * 100,
-      emoji,
+      emoji: emojis[Math.floor(Math.random() * emojis.length)],
       delay: Math.random() * 1.5,
       duration: 2 + Math.random() * 2,
       size: type === 'coins' ? 20 + Math.random() * 16 : 16 + Math.random() * 20,
