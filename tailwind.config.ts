@@ -65,25 +65,30 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "dice-spin": {
+          "0%": { transform: "rotate(0deg) scale(1)" },
+          "25%": { transform: "rotate(180deg) scale(1.3)" },
+          "50%": { transform: "rotate(360deg) scale(0.9)" },
+          "75%": { transform: "rotate(540deg) scale(1.2)" },
+          "100%": { transform: "rotate(720deg) scale(1)" },
+        },
+        "falling-particle": {
+          "0%": { transform: "translateY(0) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translateY(100vh) rotate(720deg)", opacity: "0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "dice-spin": "dice-spin 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        "falling-particle": "falling-particle 3s ease-in forwards",
       },
     },
   },
