@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit, Trash2, Search, User, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -22,6 +23,7 @@ interface Character {
   Edad: number | null;
   Estado: string | null;
   ID_Campaña: number | null;
+  description: string | null;
 }
 
 interface NPC {
@@ -35,6 +37,8 @@ interface NPC {
   Edad: number;
   Estado: string | null;
   ID_Campaña: number | null;
+  alignment: string;
+  description: string | null;
 }
 
 interface Campaign {
@@ -43,8 +47,9 @@ interface Campaign {
 }
 
 const ARQUETIPOS = ['Emisor', 'Modulador', 'Canalizador', 'Invocador', 'Focalizador', 'Compuesto'];
-const ELEMENTOS = ['Fuego', 'Hielo', 'Tierra', 'Planta', 'Luz', 'Oscuridad', 'Viento', 'Electricidad', 'Espiritual'];
-const ESENCIAS = ['Nominancia', 'Transmutación', 'Distorsión', 'Cronomancia', 'Dimensiología', 'Sincronimia', 'Emblemancia', 'Vacío'];
+const ELEMENTOS = ['Fuego', 'Hielo', 'Tierra', 'Planta', 'Luz', 'Oscuridad', 'Viento', 'Electricidad', 'Espiritual', 'Compuesto'];
+const ESENCIAS = ['Nominancia', 'Transmutación', 'Distorsión', 'Cronomancia', 'Dimensiología', 'Sincronimia', 'Emblemancia', 'Vacío', 'Compuesto'];
+const ALIGNMENTS = ['Aliado', 'Enemigo', 'Neutral', 'Unknown'];
 
 export default function Characters() {
   const { isMaster } = useAuth();
@@ -67,12 +72,12 @@ export default function Characters() {
   const [editingNPC, setEditingNPC] = useState<NPC | null>(null);
 
   const defaultCharForm = {
-    name: '', Raza: '', Arquetipo: '', Elemento: '', Esencia: '',
-    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: ''
+    name: '', Raza: '', Arquetipo: '', Elemento: 'Unknown', Esencia: 'Unknown',
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: '', description: ''
   };
   const defaultNpcForm = {
-    name: '', Raza: '', Arquetipo: '', Elemento: '', Esencia: '',
-    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: ''
+    name: '', Raza: '', Arquetipo: '', Elemento: 'Unknown', Esencia: 'Unknown',
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: '', alignment: 'Unknown', description: ''
   };
 
   const [charForm, setCharForm] = useState(defaultCharForm);
@@ -102,24 +107,27 @@ export default function Characters() {
     name: charForm.name.trim(),
     Raza: charForm.Raza || null,
     Arquetipo: charForm.Arquetipo || null,
-    Elemento: charForm.Elemento || null,
-    Esencia: charForm.Esencia || null,
+    Elemento: charForm.Elemento || 'Unknown',
+    Esencia: charForm.Esencia || 'Unknown',
     Organización: charForm.Organización || 'Unknown',
     Edad: charForm.Edad || 0,
     Estado: charForm.Estado || 'Unknown',
     ID_Campaña: charForm.ID_Campaña ? Number(charForm.ID_Campaña) : null,
+    description: charForm.description || '',
   });
 
   const buildNpcPayload = () => ({
     name: npcForm.name.trim(),
     Raza: npcForm.Raza || null,
     Arquetipo: npcForm.Arquetipo || null,
-    Elemento: npcForm.Elemento || null,
-    Esencia: npcForm.Esencia || null,
+    Elemento: npcForm.Elemento || 'Unknown',
+    Esencia: npcForm.Esencia || 'Unknown',
     Organización: npcForm.Organización || 'Unknown',
     Edad: npcForm.Edad || 0,
     Estado: npcForm.Estado || 'Unknown',
     ID_Campaña: npcForm.ID_Campaña ? Number(npcForm.ID_Campaña) : null,
+    alignment: npcForm.alignment || 'Unknown',
+    description: npcForm.description || '',
   });
 
   const handleCreateCharacter = async () => {
@@ -183,81 +191,61 @@ export default function Characters() {
   const handleDeleteCharacter = async (character: Character) => {
     if (!isMaster) return;
     const { error } = await supabase.from('characters').delete().eq('id', character.id);
-    if (error) {
-      toast({ title: "Error", description: "No se pudo eliminar el personaje", variant: "destructive" });
-    } else {
-      toast({ title: "¡Éxito!", description: "Personaje eliminado correctamente" });
-      fetchData();
-    }
+    if (error) toast({ title: "Error", description: "No se pudo eliminar el personaje", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "Personaje eliminado correctamente" }); fetchData(); }
   };
 
   const handleDeleteNPC = async (npc: NPC) => {
     if (!isMaster) return;
     const { error } = await supabase.from('npcs').delete().eq('id', npc.id);
-    if (error) {
-      toast({ title: "Error", description: "No se pudo eliminar el NPC", variant: "destructive" });
-    } else {
-      toast({ title: "¡Éxito!", description: "NPC eliminado correctamente" });
-      fetchData();
-    }
+    if (error) toast({ title: "Error", description: "No se pudo eliminar el NPC", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "NPC eliminado correctamente" }); fetchData(); }
   };
 
   const openEditCharacter = (char: Character) => {
     setEditingCharacter(char);
     setCharForm({
-      name: char.name,
-      Raza: char.Raza || '',
-      Arquetipo: char.Arquetipo || '',
-      Elemento: char.Elemento || '',
-      Esencia: char.Esencia || '',
-      Organización: char.Organización || 'Unknown',
-      Edad: char.Edad || 0,
-      Estado: char.Estado || 'Unknown',
-      ID_Campaña: char.ID_Campaña ? String(char.ID_Campaña) : '',
+      name: char.name, Raza: char.Raza || '', Arquetipo: char.Arquetipo || '',
+      Elemento: char.Elemento || 'Unknown', Esencia: char.Esencia || 'Unknown',
+      Organización: char.Organización || 'Unknown', Edad: char.Edad || 0,
+      Estado: char.Estado || 'Unknown', ID_Campaña: char.ID_Campaña ? String(char.ID_Campaña) : '',
+      description: char.description || '',
     });
   };
 
   const openEditNPC = (npc: NPC) => {
     setEditingNPC(npc);
     setNpcForm({
-      name: npc.name,
-      Raza: npc.Raza || '',
-      Arquetipo: npc.Arquetipo || '',
-      Elemento: npc.Elemento || '',
-      Esencia: npc.Esencia || '',
-      Organización: npc.Organización || 'Unknown',
-      Edad: npc.Edad || 0,
-      Estado: npc.Estado || 'Unknown',
-      ID_Campaña: npc.ID_Campaña ? String(npc.ID_Campaña) : '',
+      name: npc.name, Raza: npc.Raza || '', Arquetipo: npc.Arquetipo || '',
+      Elemento: npc.Elemento || 'Unknown', Esencia: npc.Esencia || 'Unknown',
+      Organización: npc.Organización || 'Unknown', Edad: npc.Edad || 0,
+      Estado: npc.Estado || 'Unknown', ID_Campaña: npc.ID_Campaña ? String(npc.ID_Campaña) : '',
+      alignment: npc.alignment || 'Unknown', description: npc.description || '',
     });
   };
 
-  const filteredCharacters = characters
-    .filter(char => 
-      char.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterArchetype === 'all' || char.Arquetipo === filterArchetype) &&
-      (filterElement === 'all' || char.Elemento === filterElement) &&
-      (filterEssence === 'all' || char.Esencia === filterEssence) &&
-      (filterOrg === 'all' || char.Organización === filterOrg)
-    );
+  const filteredCharacters = characters.filter(char =>
+    char.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (filterArchetype === 'all' || char.Arquetipo === filterArchetype) &&
+    (filterElement === 'all' || char.Elemento === filterElement) &&
+    (filterEssence === 'all' || char.Esencia === filterEssence) &&
+    (filterOrg === 'all' || char.Organización === filterOrg)
+  );
 
-  const filteredNPCs = npcs
-    .filter(npc => 
-      npc.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterArchetype === 'all' || npc.Arquetipo === filterArchetype) &&
-      (filterElement === 'all' || String(npc.Elemento) === filterElement) &&
-      (filterEssence === 'all' || npc.Esencia === filterEssence)
-    );
+  const filteredNPCs = npcs.filter(npc =>
+    npc.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (filterArchetype === 'all' || npc.Arquetipo === filterArchetype) &&
+    (filterElement === 'all' || String(npc.Elemento) === filterElement) &&
+    (filterEssence === 'all' || npc.Esencia === filterEssence)
+  );
 
-  if (loading) {
-    return <div className="flex justify-center items-center min-h-[400px]">Loading characters...</div>;
-  }
+  if (loading) return <div className="flex justify-center items-center min-h-[400px]">Loading characters...</div>;
 
-  const entityFormJSX = (form: typeof defaultCharForm, setForm: (f: typeof defaultCharForm) => void, onSubmit: () => void, isEdit: boolean, type: 'character' | 'npc') => (
-    <div className="grid grid-cols-2 gap-4">
+  const charFormJSX = (form: typeof defaultCharForm, setForm: (f: typeof defaultCharForm) => void, onSubmit: () => void, isEdit: boolean) => (
+    <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-1">
       <div className="col-span-2">
         <Label>Nombre *</Label>
-        <Input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} placeholder={`Nombre del ${type === 'character' ? 'personaje' : 'NPC'}`} />
+        <Input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} placeholder="Nombre del personaje" />
       </div>
       <div>
         <Label>Raza</Label>
@@ -271,9 +259,7 @@ export default function Characters() {
         <Label>Arquetipo</Label>
         <Select value={form.Arquetipo} onValueChange={(v) => setForm({...form, Arquetipo: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-          <SelectContent>
-            {ARQUETIPOS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-          </SelectContent>
+          <SelectContent>{ARQUETIPOS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       <div>
@@ -281,6 +267,7 @@ export default function Characters() {
         <Select value={form.Elemento} onValueChange={(v) => setForm({...form, Elemento: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="Unknown">Unknown</SelectItem>
             {ELEMENTOS.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -290,6 +277,7 @@ export default function Characters() {
         <Select value={form.Esencia} onValueChange={(v) => setForm({...form, Esencia: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="Unknown">Unknown</SelectItem>
             {ESENCIAS.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -319,9 +307,95 @@ export default function Characters() {
         </Select>
       </div>
       <div className="col-span-2">
-        <Button onClick={onSubmit} className="w-full">
-          {isEdit ? 'Guardar Cambios' : `Crear ${type === 'character' ? 'Personaje' : 'NPC'}`}
-        </Button>
+        <Label>Descripción (opcional)</Label>
+        <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} placeholder="Descripción o información extra del personaje..." rows={3} />
+      </div>
+      <div className="col-span-2">
+        <Button onClick={onSubmit} className="w-full">{isEdit ? 'Guardar Cambios' : 'Crear Personaje'}</Button>
+      </div>
+    </div>
+  );
+
+  const npcFormJSX = (form: typeof defaultNpcForm, setForm: (f: typeof defaultNpcForm) => void, onSubmit: () => void, isEdit: boolean) => (
+    <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="col-span-2">
+        <Label>Nombre *</Label>
+        <Input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} placeholder="Nombre del NPC" />
+      </div>
+      <div>
+        <Label>Raza</Label>
+        <Input value={form.Raza} onChange={(e) => setForm({...form, Raza: e.target.value})} placeholder="Ej: Humano, Elfo..." />
+      </div>
+      <div>
+        <Label>Edad</Label>
+        <Input type="number" value={form.Edad} onChange={(e) => setForm({...form, Edad: Number(e.target.value)})} />
+      </div>
+      <div>
+        <Label>Arquetipo</Label>
+        <Select value={form.Arquetipo} onValueChange={(v) => setForm({...form, Arquetipo: v})}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+          <SelectContent>{ARQUETIPOS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Elemento</Label>
+        <Select value={form.Elemento} onValueChange={(v) => setForm({...form, Elemento: v})}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Unknown">Unknown</SelectItem>
+            {ELEMENTOS.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Esencia</Label>
+        <Select value={form.Esencia} onValueChange={(v) => setForm({...form, Esencia: v})}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Unknown">Unknown</SelectItem>
+            {ESENCIAS.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Organización</Label>
+        <Select value={form.Organización} onValueChange={(v) => setForm({...form, Organización: v})}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Unknown">Sin organización</SelectItem>
+            {organizations.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Alignment</Label>
+        <Select value={form.alignment} onValueChange={(v) => setForm({...form, alignment: v})}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+          <SelectContent>
+            {ALIGNMENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Estado</Label>
+        <Input value={form.Estado} onChange={(e) => setForm({...form, Estado: e.target.value})} placeholder="Ej: Vivo, Muerto..." />
+      </div>
+      <div>
+        <Label>Campaña</Label>
+        <Select value={form.ID_Campaña} onValueChange={(v) => setForm({...form, ID_Campaña: v})}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Ninguna</SelectItem>
+            {campaigns.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="col-span-2">
+        <Label>Descripción (opcional)</Label>
+        <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} placeholder="Descripción o información extra del NPC..." rows={3} />
+      </div>
+      <div className="col-span-2">
+        <Button onClick={onSubmit} className="w-full">{isEdit ? 'Guardar Cambios' : 'Crear NPC'}</Button>
       </div>
     </div>
   );
@@ -333,41 +407,34 @@ export default function Characters() {
         {isMaster && (
           <div className="flex space-x-2">
             <Dialog open={isCharacterDialogOpen} onOpenChange={(open) => { setIsCharacterDialogOpen(open); if (!open) resetCharForm(); }}>
-              <DialogTrigger asChild>
-                <Button><Plus className="w-4 h-4 mr-2" />Add Character</Button>
-              </DialogTrigger>
+              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Add Character</Button></DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader><DialogTitle>Nuevo Personaje</DialogTitle></DialogHeader>
-                {entityFormJSX(charForm, setCharForm, handleCreateCharacter, false, 'character')}
+                {charFormJSX(charForm, setCharForm, handleCreateCharacter, false)}
               </DialogContent>
             </Dialog>
-            
             <Dialog open={isNPCDialogOpen} onOpenChange={(open) => { setIsNPCDialogOpen(open); if (!open) resetNpcForm(); }}>
-              <DialogTrigger asChild>
-                <Button variant="outline"><Plus className="w-4 h-4 mr-2" />Add NPC</Button>
-              </DialogTrigger>
+              <DialogTrigger asChild><Button variant="outline"><Plus className="w-4 h-4 mr-2" />Add NPC</Button></DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader><DialogTitle>Nuevo NPC</DialogTitle></DialogHeader>
-                {entityFormJSX(npcForm, setNpcForm, handleCreateNPC, false, 'npc')}
+                {npcFormJSX(npcForm, setNpcForm, handleCreateNPC, false)}
               </DialogContent>
             </Dialog>
           </div>
         )}
       </div>
 
-      {/* Edit Character Dialog */}
       <Dialog open={!!editingCharacter} onOpenChange={(open) => { if (!open) { setEditingCharacter(null); resetCharForm(); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Editar Personaje</DialogTitle></DialogHeader>
-          {entityFormJSX(charForm, setCharForm, handleEditCharacter, true, 'character')}
+          {charFormJSX(charForm, setCharForm, handleEditCharacter, true)}
         </DialogContent>
       </Dialog>
 
-      {/* Edit NPC Dialog */}
       <Dialog open={!!editingNPC} onOpenChange={(open) => { if (!open) { setEditingNPC(null); resetNpcForm(); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Editar NPC</DialogTitle></DialogHeader>
-          {entityFormJSX(npcForm, setNpcForm, handleEditNPC, true, 'npc')}
+          {npcFormJSX(npcForm, setNpcForm, handleEditNPC, true)}
         </DialogContent>
       </Dialog>
 
@@ -380,29 +447,29 @@ export default function Characters() {
         <Select value={filterArchetype} onValueChange={setFilterArchetype}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Arquetipos" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="pl-2">Arquetipos</SelectItem>
-            {ARQUETIPOS.map(a => <SelectItem key={a} value={a} className="pl-2">{a}</SelectItem>)}
+            <SelectItem value="all">Arquetipos</SelectItem>
+            {ARQUETIPOS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterElement} onValueChange={setFilterElement}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Elementos" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="pl-2">Elementos</SelectItem>
-            {ELEMENTOS.map(e => <SelectItem key={e} value={e} className="pl-2">{e}</SelectItem>)}
+            <SelectItem value="all">Elementos</SelectItem>
+            {ELEMENTOS.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterEssence} onValueChange={setFilterEssence}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Esencias" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="pl-2">Esencias</SelectItem>
-            {ESENCIAS.map(e => <SelectItem key={e} value={e} className="pl-2">{e}</SelectItem>)}
+            <SelectItem value="all">Esencias</SelectItem>
+            {ESENCIAS.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterOrg} onValueChange={setFilterOrg}>
           <SelectTrigger className="w-[180px]"><SelectValue placeholder="Organizaciones" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="pl-2">Organizaciones</SelectItem>
-            {organizations.map(org => <SelectItem key={org} value={org} className="pl-2">{org}</SelectItem>)}
+            <SelectItem value="all">Organizaciones</SelectItem>
+            {organizations.map(org => <SelectItem key={org} value={org}>{org}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -426,12 +493,8 @@ export default function Characters() {
                     <span>{character.name}</span>
                     {isMaster && (
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => openEditCharacter(character)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCharacter(character)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEditCharacter(character)}><Edit className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCharacter(character)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     )}
                   </CardTitle>
@@ -445,6 +508,7 @@ export default function Characters() {
                     <p><span className="font-medium">Edad:</span> {character.Edad}</p>
                     <p><span className="font-medium">Organización:</span> {character.Organización}</p>
                     <p><span className="font-medium">Estado:</span> {character.Estado}</p>
+                    {character.description && <p className="text-muted-foreground italic mt-2">{character.description}</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -461,12 +525,8 @@ export default function Characters() {
                     <span>{npc.name}</span>
                     {isMaster && (
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => openEditNPC(npc)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteNPC(npc)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEditNPC(npc)}><Edit className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteNPC(npc)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     )}
                   </CardTitle>
@@ -479,7 +539,9 @@ export default function Characters() {
                     <p><span className="font-medium">Esencia:</span> {npc.Esencia}</p>
                     <p><span className="font-medium">Edad:</span> {npc.Edad}</p>
                     <p><span className="font-medium">Organización:</span> {npc.Organización}</p>
+                    <p><span className="font-medium">Alignment:</span> {npc.alignment}</p>
                     <p><span className="font-medium">Estado:</span> {npc.Estado}</p>
+                    {npc.description && <p className="text-muted-foreground italic mt-2">{npc.description}</p>}
                   </div>
                 </CardContent>
               </Card>

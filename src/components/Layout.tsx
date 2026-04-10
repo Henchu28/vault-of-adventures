@@ -2,7 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Home, Users, Sword, Map, Music, BookOpen, Sparkles, Menu, X } from 'lucide-react';
+import { LogOut, Home, Users, Sword, ImageIcon, Music, BookOpen, Sparkles, Menu, X } from 'lucide-react';
 import { D20Roller } from '@/components/D20Roller';
 import headerBg from '@/assets/header-bg.jpg';
 import {
@@ -27,7 +27,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/', label: 'Home', icon: Home, show: true },
     { path: '/characters', label: 'Characters', icon: Users, show: true },
     { path: '/campaigns', label: 'Campaigns', icon: Sword, show: true },
-    { path: '/maps', label: 'Maps', icon: Map, show: true },
+    { path: '/gallery', label: 'Gallery', icon: ImageIcon, show: true },
     { path: '/music', label: 'Music', icon: Music, show: true },
     { path: '/notes', label: 'Notes', icon: BookOpen, show: isMaster },
   ];
