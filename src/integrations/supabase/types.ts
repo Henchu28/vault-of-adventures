@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_inventory: {
+        Row: {
+          campaign_id: number
+          created_at: string
+          id: string
+          item_name: string
+          notes: string | null
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: number
+          created_at?: string
+          id?: string
+          item_name: string
+          notes?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: number
+          created_at?: string
+          id?: string
+          item_name?: string
+          notes?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_inventory_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           description: string | null
@@ -35,9 +73,34 @@ export type Database = {
         }
         Relationships: []
       }
+      character_photos: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       characters: {
         Row: {
           Arquetipo: string | null
+          description: string | null
           Edad: number | null
           Elemento: string | null
           Esencia: string | null
@@ -50,6 +113,7 @@ export type Database = {
         }
         Insert: {
           Arquetipo?: string | null
+          description?: string | null
           Edad?: number | null
           Elemento?: string | null
           Esencia?: string | null
@@ -62,6 +126,7 @@ export type Database = {
         }
         Update: {
           Arquetipo?: string | null
+          description?: string | null
           Edad?: number | null
           Elemento?: string | null
           Esencia?: string | null
@@ -186,7 +251,9 @@ export type Database = {
       }
       npcs: {
         Row: {
+          alignment: string
           Arquetipo: string | null
+          description: string | null
           Edad: number
           Elemento: string | null
           Esencia: string | null
@@ -198,7 +265,9 @@ export type Database = {
           Raza: string | null
         }
         Insert: {
+          alignment?: string
           Arquetipo?: string | null
+          description?: string | null
           Edad?: number
           Elemento?: string | null
           Esencia?: string | null
@@ -210,7 +279,9 @@ export type Database = {
           Raza?: string | null
         }
         Update: {
+          alignment?: string
           Arquetipo?: string | null
+          description?: string | null
           Edad?: number
           Elemento?: string | null
           Esencia?: string | null
