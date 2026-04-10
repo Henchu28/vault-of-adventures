@@ -10,7 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Characters from "./pages/Characters";
 import Campaigns from "./pages/Campaigns";
-import Maps from "./pages/Maps";
+import Gallery from "./pages/Gallery";
 import Music from "./pages/Music";
 import Notes from "./pages/Notes";
 import NotFound from "./pages/NotFound";
@@ -27,48 +27,23 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Index />
-                </Layout>
-              </ProtectedRoute>
+              <ProtectedRoute><Layout><Index /></Layout></ProtectedRoute>
             } />
             <Route path="/characters" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Characters />
-                </Layout>
-              </ProtectedRoute>
+              <ProtectedRoute><Layout><Characters /></Layout></ProtectedRoute>
             } />
             <Route path="/campaigns" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Campaigns />
-                </Layout>
-              </ProtectedRoute>
+              <ProtectedRoute><Layout><Campaigns /></Layout></ProtectedRoute>
             } />
-            <Route path="/maps" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Maps />
-                </Layout>
-              </ProtectedRoute>
+            <Route path="/gallery" element={
+              <ProtectedRoute><Layout><Gallery /></Layout></ProtectedRoute>
             } />
             <Route path="/music" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Music />
-                </Layout>
-              </ProtectedRoute>
+              <ProtectedRoute><Layout><Music /></Layout></ProtectedRoute>
             } />
             <Route path="/notes" element={
-              <ProtectedRoute requireMaster={true}>
-                <Layout>
-                  <Notes />
-                </Layout>
-              </ProtectedRoute>
+              <ProtectedRoute requireMaster={true}><Layout><Notes /></Layout></ProtectedRoute>
             } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
