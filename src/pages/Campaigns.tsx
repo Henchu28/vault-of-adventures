@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Sword, Shield, ArrowLeft, Loader2, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Edit, Trash2, Sword, Shield, ArrowLeft, Loader2, ChevronLeft, ChevronRight, BookOpen, Package } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import campaignsImg from '@/assets/campaigns-card.jpg';
+import { CampaignInventory } from '@/components/campaigns/CampaignInventory';
 
 interface Campaign {
   id: number;
@@ -45,8 +47,7 @@ export default function Campaigns() {
   const fetchCampaigns = async () => {
     setLoading(true);
     const { data, error } = await supabase.from('campaigns').select('*').order('id', { ascending: true });
-    if (error) { toast({ title: "Error", description: "Failed to fetch campaigns", variant: "destructive" }); }
-    else { setCampaigns(data || []); }
+    if (!error) setCampaigns(data || []);
     setLoading(false);
   };
 
@@ -61,23 +62,23 @@ export default function Campaigns() {
     if (!formName.trim()) return;
     const folderId = formDriveFolderId.trim() ? extractFolderId(formDriveFolderId) : null;
     const { error } = await supabase.from('campaigns').insert({ name: formName.trim(), description: formDescription.trim() || null, drive_folder_id: folderId });
-    if (error) { toast({ title: "Error", description: "No se pudo crear la campaña", variant: "destructive" }); }
-    else { toast({ title: "¡Éxito!", description: "Campaña creada correctamente" }); resetForm(); setIsDialogOpen(false); fetchCampaigns(); }
+    if (error) toast({ title: "Error", description: "No se pudo crear la campaña", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "Campaña creada" }); resetForm(); setIsDialogOpen(false); fetchCampaigns(); }
   };
 
   const handleEdit = async () => {
     if (!editingCampaign || !formName.trim()) return;
     const folderId = formDriveFolderId.trim() ? extractFolderId(formDriveFolderId) : null;
     const { error } = await supabase.from('campaigns').update({ name: formName.trim(), description: formDescription.trim() || null, drive_folder_id: folderId }).eq('id', editingCampaign.id);
-    if (error) { toast({ title: "Error", description: "No se pudo actualizar la campaña", variant: "destructive" }); }
-    else { toast({ title: "¡Éxito!", description: "Campaña actualizada correctamente" }); resetForm(); setEditingCampaign(null); fetchCampaigns(); }
+    if (error) toast({ title: "Error", description: "No se pudo actualizar", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "Campaña actualizada" }); resetForm(); setEditingCampaign(null); fetchCampaigns(); }
   };
 
   const handleDelete = async (campaign: Campaign) => {
     if (!isMaster) return;
     const { error } = await supabase.from('campaigns').delete().eq('id', campaign.id);
-    if (error) { toast({ title: "Error", description: "No se pudo eliminar la campaña", variant: "destructive" }); }
-    else { toast({ title: "¡Éxito!", description: "Campaña eliminada correctamente" }); fetchCampaigns(); }
+    if (error) toast({ title: "Error", description: "No se pudo eliminar", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "Campaña eliminada" }); fetchCampaigns(); }
   };
 
   const openEdit = (campaign: Campaign) => {
@@ -95,16 +96,12 @@ export default function Campaigns() {
     setLoadingSessions(true);
     try {
       const { data, error } = await supabase.functions.invoke('drive-sessions', { body: { folderId: campaign.drive_folder_id } });
-      if (error) { toast({ title: "Error", description: "No se pudieron cargar las sesiones", variant: "destructive" }); }
-      else if (data?.success) { setSessions(data.sessions || []); }
-      else { toast({ title: "Error", description: data?.error || "Error desconocido", variant: "destructive" }); }
-    } catch { toast({ title: "Error", description: "Error al conectar con Drive", variant: "destructive" }); }
+      if (!error && data?.success) setSessions(data.sessions || []);
+    } catch {}
     setLoadingSessions(false);
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center min-h-[400px]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
-  }
+  if (loading) return <div className="flex justify-center items-center min-h-[400px]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   const campaignFormJSX = (isEdit: boolean) => (
     <div className="space-y-4">
@@ -122,7 +119,6 @@ export default function Campaigns() {
 
     return (
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => { setSelectedCampaign(null); setActiveSessionIndex(null); }}>
             <ArrowLeft className="w-5 h-5" />
@@ -133,83 +129,84 @@ export default function Campaigns() {
           </div>
         </div>
 
-        {!selectedCampaign.drive_folder_id ? (
-          <div className="text-center py-12">
-            <Sword className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground">Sin carpeta de Drive asociada</h3>
-          </div>
-        ) : loadingSessions ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="text-muted-foreground">Cargando sesiones desde Drive...</p>
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="text-center py-12">
-            <Sword className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground">No se encontraron sesiones</h3>
-          </div>
-        ) : activeSession ? (
-          /* Session content view */
-          <div className="space-y-6">
-            <Button variant="outline" size="sm" onClick={() => setActiveSessionIndex(null)}>
-              <ArrowLeft className="w-4 h-4 mr-2" />Volver a la lista
-            </Button>
-            <h2 className="text-2xl font-bold">{activeSession.name}</h2>
-            <div className="prose prose-sm dark:prose-invert max-w-none overflow-auto bg-card border border-border rounded-lg p-6">
-              <div dangerouslySetInnerHTML={{ __html: activeSession.content }} />
-            </div>
-            <div className="flex justify-between pt-4">
-              {activeSessionIndex > 0 ? (
-                <Button variant="outline" onClick={() => setActiveSessionIndex(activeSessionIndex - 1)}>
-                  <ChevronLeft className="w-4 h-4 mr-2" />Sesión anterior
-                </Button>
-              ) : <div />}
-              {activeSessionIndex < sessions.length - 1 ? (
-                <Button variant="outline" onClick={() => setActiveSessionIndex(activeSessionIndex + 1)}>
-                  Siguiente sesión<ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : <div />}
-            </div>
-          </div>
-        ) : (
-          /* Session list view */
-          <div className="space-y-6">
-            {lastSession && (
-              <Card
-                className="border-2 border-primary/30 cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => setActiveSessionIndex(sessions.length - 1)}
-              >
-                <CardHeader>
-                  <div className="flex items-center gap-2 text-primary">
-                    <BookOpen className="w-5 h-5" />
-                    <span className="text-xs font-medium uppercase tracking-wide">Última sesión</span>
-                  </div>
-                  <CardTitle className="text-xl">{lastSession.name}</CardTitle>
-                </CardHeader>
-              </Card>
-            )}
+        <Tabs defaultValue="historia">
+          <TabsList>
+            <TabsTrigger value="historia" className="flex items-center gap-2"><BookOpen className="w-4 h-4" />Historia</TabsTrigger>
+            <TabsTrigger value="inventario" className="flex items-center gap-2"><Package className="w-4 h-4" />Inventario</TabsTrigger>
+          </TabsList>
 
-            <h3 className="text-lg font-semibold text-muted-foreground">Todas las sesiones</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {sessions.map((session, idx) => (
-                <Card
-                  key={idx}
-                  className="cursor-pointer hover:shadow-md hover:border-primary/20 transition-all"
-                  onClick={() => setActiveSessionIndex(idx)}
-                >
-                  <CardHeader className="py-4">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 font-mono">
-                        {session.sessionNumber || idx + 1}
-                      </span>
-                      {session.name}
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
+          <TabsContent value="historia">
+            {!selectedCampaign.drive_folder_id ? (
+              <div className="text-center py-12">
+                <Sword className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-muted-foreground">Sin carpeta de Drive asociada</h3>
+              </div>
+            ) : loadingSessions ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                <p className="text-muted-foreground">Cargando sesiones desde Drive...</p>
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="text-center py-12">
+                <Sword className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-muted-foreground">No se encontraron sesiones</h3>
+              </div>
+            ) : activeSession ? (
+              <div className="space-y-6">
+                <Button variant="outline" size="sm" onClick={() => setActiveSessionIndex(null)}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />Volver a la lista
+                </Button>
+                <h2 className="text-2xl font-bold">{activeSession.name}</h2>
+                <div className="prose prose-sm dark:prose-invert max-w-none overflow-auto bg-card border border-border rounded-lg p-6">
+                  <div dangerouslySetInnerHTML={{ __html: activeSession.content }} />
+                </div>
+                <div className="flex justify-between pt-4">
+                  {activeSessionIndex > 0 ? (
+                    <Button variant="outline" onClick={() => setActiveSessionIndex(activeSessionIndex - 1)}>
+                      <ChevronLeft className="w-4 h-4 mr-2" />Sesión anterior
+                    </Button>
+                  ) : <div />}
+                  {activeSessionIndex < sessions.length - 1 ? (
+                    <Button variant="outline" onClick={() => setActiveSessionIndex(activeSessionIndex + 1)}>
+                      Siguiente sesión<ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  ) : <div />}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {lastSession && (
+                  <Card className="border-2 border-primary/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveSessionIndex(sessions.length - 1)}>
+                    <CardHeader>
+                      <div className="flex items-center gap-2 text-primary">
+                        <BookOpen className="w-5 h-5" />
+                        <span className="text-xs font-medium uppercase tracking-wide">Última sesión</span>
+                      </div>
+                      <CardTitle className="text-xl">{lastSession.name}</CardTitle>
+                    </CardHeader>
+                  </Card>
+                )}
+                <h3 className="text-lg font-semibold text-muted-foreground">Todas las sesiones</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {sessions.map((session, idx) => (
+                    <Card key={idx} className="cursor-pointer hover:shadow-md hover:border-primary/20 transition-all" onClick={() => setActiveSessionIndex(idx)}>
+                      <CardHeader className="py-4">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 font-mono">{session.sessionNumber || idx + 1}</span>
+                          {session.name}
+                        </CardTitle>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="inventario">
+            <CampaignInventory campaignId={selectedCampaign.id} />
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }
@@ -234,7 +231,6 @@ export default function Campaigns() {
         <div className="text-center py-12">
           <Sword className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium text-muted-foreground">No hay campañas</h3>
-          <p className="text-sm text-muted-foreground">¡Crea tu primera aventura!</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

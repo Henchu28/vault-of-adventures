@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, BookOpen, Folder, FileText, ArrowLeft, Loader2, ChevronRight, FileSpreadsheet, FileType } from 'lucide-react';
+import { Plus, Search, BookOpen, Folder, FileText, ArrowLeft, Loader2, ChevronRight, FileSpreadsheet, FileType, FolderPlus, Upload } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentEditor } from '@/components/notes/DocumentEditor';
 import { DriveFileViewer } from '@/components/notes/DriveFileViewer';
@@ -68,15 +68,26 @@ export default function Notes() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Documents
   const [documents, setDocuments] = useState<Document[]>([]);
   const [editingDoc, setEditingDoc] = useState<Document | null>(null);
   const [viewingDriveFile, setViewingDriveFile] = useState<DriveItem | null>(null);
 
-  // Create dialog
+  // Create document dialog
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newFileType, setNewFileType] = useState<string>('docx');
+
+  // Create folder dialog
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+
+  // Upload file dialog
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadTitle, setUploadTitle] = useState('');
+
+  // Local folders
+  const [localFolders, setLocalFolders] = useState<string[]>([]);
 
   const currentFolderId = breadcrumbs[breadcrumbs.length - 1].id;
   const currentFolderPath = '/' + breadcrumbs.map(b => b.name).join('/');
@@ -84,38 +95,57 @@ export default function Notes() {
   const fetchDriveFolder = useCallback(async (folderId: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('drive-browser', {
-        body: { folderId },
-      });
-      if (error) {
-        toast({ title: 'Error', description: 'No se pudo cargar la carpeta de Drive', variant: 'destructive' });
-      } else if (data?.success) {
+      const { data, error } = await supabase.functions.invoke('drive-browser', { body: { folderId } });
+      if (!error && data?.success) {
         setFolders(data.folders || []);
         setFiles(data.files || []);
       }
-    } catch {
-      toast({ title: 'Error', description: 'Error al conectar con Drive', variant: 'destructive' });
-    }
+    } catch {}
     setLoading(false);
-  }, [toast]);
+  }, []);
 
   const fetchDocuments = useCallback(async () => {
     if (!user) return;
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('documents')
       .select('*')
       .eq('folder_path', currentFolderPath)
       .order('title', { ascending: true });
-    if (!error) setDocuments((data as Document[]) || []);
+    if (data) setDocuments((data as Document[]) || []);
+  }, [user, currentFolderPath]);
+
+  const fetchLocalFolders = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('documents')
+      .select('folder_path');
+    if (data) {
+      const subfolders = new Set<string>();
+      data.forEach(d => {
+        const path = d.folder_path || '/';
+        if (path.startsWith(currentFolderPath) && path !== currentFolderPath) {
+          const rest = path.slice(currentFolderPath.length).replace(/^\//, '');
+          const nextFolder = rest.split('/')[0];
+          if (nextFolder) subfolders.add(nextFolder);
+        }
+      });
+      setLocalFolders(Array.from(subfolders).sort());
+    }
   }, [user, currentFolderPath]);
 
   useEffect(() => {
     fetchDriveFolder(currentFolderId);
     fetchDocuments();
-  }, [currentFolderId, fetchDriveFolder, fetchDocuments]);
+    fetchLocalFolders();
+  }, [currentFolderId, fetchDriveFolder, fetchDocuments, fetchLocalFolders]);
 
   const navigateToFolder = (folder: DriveItem) => {
     setBreadcrumbs(prev => [...prev, { id: folder.id, name: folder.name }]);
+    setSearchTerm('');
+  };
+
+  const navigateToLocalFolder = (folderName: string) => {
+    setBreadcrumbs(prev => [...prev, { id: 'local-' + folderName, name: folderName }]);
     setSearchTerm('');
   };
 
@@ -127,88 +157,117 @@ export default function Notes() {
   const handleCreateDocument = async () => {
     if (!user || !newTitle.trim()) return;
     const { data, error } = await supabase.from('documents').insert({
-      title: newTitle.trim(),
-      content: '',
-      file_type: newFileType,
-      folder_path: currentFolderPath,
-      user_id: user.id,
+      title: newTitle.trim(), content: '', file_type: newFileType,
+      folder_path: currentFolderPath, user_id: user.id,
     }).select().single();
-    if (error) {
-      toast({ title: 'Error', description: 'No se pudo crear el documento', variant: 'destructive' });
-    } else {
-      toast({ title: '¡Creado!', description: 'Documento creado correctamente' });
-      setNewTitle('');
-      setIsCreateOpen(false);
-      setEditingDoc(data as Document);
-    }
+    if (error) toast({ title: 'Error', description: 'No se pudo crear el documento', variant: 'destructive' });
+    else { toast({ title: '¡Creado!' }); setNewTitle(''); setIsCreateOpen(false); setEditingDoc(data as Document); }
   };
 
-  // If viewing a Drive file
+  const handleCreateFolder = async () => {
+    if (!user || !newFolderName.trim()) return;
+    // Create a placeholder document in the new folder to make it exist
+    const folderPath = currentFolderPath + '/' + newFolderName.trim();
+    const { error } = await supabase.from('documents').insert({
+      title: '.folder', content: '', file_type: 'txt',
+      folder_path: folderPath, user_id: user.id,
+    });
+    if (error) toast({ title: 'Error', description: 'No se pudo crear la carpeta', variant: 'destructive' });
+    else { toast({ title: '¡Carpeta creada!' }); setNewFolderName(''); setIsFolderDialogOpen(false); fetchLocalFolders(); }
+  };
+
+  const handleUploadFile = async () => {
+    if (!user || !uploadFile || !uploadTitle.trim()) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const content = reader.result as string;
+      const ext = uploadFile.name.split('.').pop()?.toLowerCase();
+      let fileType = 'txt';
+      if (ext === 'html' || ext === 'htm') fileType = 'docx';
+      else if (ext === 'csv' || ext === 'tsv') fileType = 'xlsx';
+      
+      const { data, error } = await supabase.from('documents').insert({
+        title: uploadTitle.trim(), content, file_type: fileType,
+        folder_path: currentFolderPath, user_id: user.id,
+      }).select().single();
+      if (error) toast({ title: 'Error', description: 'No se pudo subir', variant: 'destructive' });
+      else { toast({ title: '¡Subido!' }); setUploadFile(null); setUploadTitle(''); setIsUploadOpen(false); setEditingDoc(data as Document); }
+    };
+    reader.readAsText(uploadFile);
+  };
+
   if (viewingDriveFile) {
     return (
       <div className="space-y-6">
-        <DriveFileViewer
-          fileId={viewingDriveFile.id}
-          fileName={viewingDriveFile.name}
-          mimeType={viewingDriveFile.mimeType}
-          onBack={() => setViewingDriveFile(null)}
-        />
+        <DriveFileViewer fileId={viewingDriveFile.id} fileName={viewingDriveFile.name} mimeType={viewingDriveFile.mimeType} onBack={() => setViewingDriveFile(null)} />
       </div>
     );
   }
 
-  // If editing a document, show the editor
   if (editingDoc) {
     return (
       <div className="space-y-6">
-        <DocumentEditor
-          document={editingDoc}
-          onBack={() => { setEditingDoc(null); fetchDocuments(); }}
-          onDeleted={() => { setEditingDoc(null); fetchDocuments(); }}
-          onSaved={() => fetchDocuments()}
-        />
+        <DocumentEditor document={editingDoc} onBack={() => { setEditingDoc(null); fetchDocuments(); }} onDeleted={() => { setEditingDoc(null); fetchDocuments(); }} onSaved={() => fetchDocuments()} />
       </div>
     );
   }
 
   const filteredFolders = folders.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
   const filteredFiles = files.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  const filteredDocs = documents.filter(d => d.title.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredDocs = documents.filter(d => d.title.toLowerCase().includes(searchTerm.toLowerCase()) && d.title !== '.folder');
+  const filteredLocalFolders = localFolders.filter(f => f.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold">Notas de Campaña</h1>
-        <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) setNewTitle(''); }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" />Nuevo Documento</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Crear Documento</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Nombre</Label>
-                <Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Nombre del documento..." />
+        <div className="flex gap-2 flex-wrap">
+          <Dialog open={isFolderDialogOpen} onOpenChange={setIsFolderDialogOpen}>
+            <DialogTrigger asChild><Button variant="outline"><FolderPlus className="w-4 h-4 mr-2" />Nueva Carpeta</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Crear Carpeta</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div><Label>Nombre</Label><Input value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="Nombre de la carpeta..." /></div>
+                <Button onClick={handleCreateFolder} disabled={!newFolderName.trim()} className="w-full">Crear Carpeta</Button>
               </div>
-              <div>
-                <Label>Formato</Label>
-                <Select value={newFileType} onValueChange={setNewFileType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="docx">📄 Word (texto enriquecido)</SelectItem>
-                    <SelectItem value="xlsx">📊 Excel (hoja de cálculo)</SelectItem>
-                    <SelectItem value="txt">📝 Texto plano</SelectItem>
-                  </SelectContent>
-                </Select>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+            <DialogTrigger asChild><Button variant="outline"><Upload className="w-4 h-4 mr-2" />Subir Archivo</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Subir Archivo</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div><Label>Nombre</Label><Input value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} placeholder="Nombre del documento..." /></div>
+                <div><Label>Archivo (.txt, .html, .csv)</Label><Input type="file" accept=".txt,.html,.htm,.csv,.tsv" onChange={e => { setUploadFile(e.target.files?.[0] || null); if (!uploadTitle && e.target.files?.[0]) setUploadTitle(e.target.files[0].name.replace(/\.[^.]+$/, '')); }} /></div>
+                <Button onClick={handleUploadFile} disabled={!uploadFile || !uploadTitle.trim()} className="w-full">Subir y Editar</Button>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
-                <Button onClick={handleCreateDocument} disabled={!newTitle.trim()}>Crear y Editar</Button>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) setNewTitle(''); }}>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Nuevo Documento</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Crear Documento</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div><Label>Nombre</Label><Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Nombre del documento..." /></div>
+                <div>
+                  <Label>Formato</Label>
+                  <Select value={newFileType} onValueChange={setNewFileType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="docx">📄 Word (texto enriquecido)</SelectItem>
+                      <SelectItem value="xlsx">📊 Excel (hoja de cálculo)</SelectItem>
+                      <SelectItem value="txt">📝 Texto plano</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleCreateDocument} disabled={!newTitle.trim()} className="w-full">Crear y Editar</Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Breadcrumbs */}
@@ -216,10 +275,7 @@ export default function Notes() {
         {breadcrumbs.map((crumb, i) => (
           <div key={crumb.id} className="flex items-center gap-1">
             {i > 0 && <ChevronRight className="w-3 h-3 text-muted-foreground" />}
-            <button
-              onClick={() => navigateToBreadcrumb(i)}
-              className={`hover:underline ${i === breadcrumbs.length - 1 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
-            >
+            <button onClick={() => navigateToBreadcrumb(i)} className={`hover:underline ${i === breadcrumbs.length - 1 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
               {crumb.name}
             </button>
           </div>
@@ -229,12 +285,7 @@ export default function Notes() {
       {/* Search */}
       <div className="flex items-center gap-2 p-3 bg-card rounded-lg border border-border">
         <Search className="w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar archivos y documentos..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="border-0 bg-transparent focus-visible:ring-0 p-0 h-auto"
-        />
+        <Input placeholder="Buscar archivos y documentos..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="border-0 bg-transparent focus-visible:ring-0 p-0 h-auto" />
       </div>
 
       {loading ? (
@@ -250,10 +301,10 @@ export default function Notes() {
             </Button>
           )}
 
-          {/* Folders */}
+          {/* Drive Folders */}
           {filteredFolders.length > 0 && (
             <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-muted-foreground">Carpetas</h2>
+              <h2 className="text-lg font-semibold text-muted-foreground">Carpetas (Drive)</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredFolders.map(folder => (
                   <Card key={folder.id} className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all" onClick={() => navigateToFolder(folder)}>
@@ -267,7 +318,24 @@ export default function Notes() {
             </div>
           )}
 
-          {/* Drive Files (read-only) */}
+          {/* Local Folders */}
+          {filteredLocalFolders.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-muted-foreground">Carpetas Locales</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredLocalFolders.map(folder => (
+                  <Card key={folder} className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all" onClick={() => navigateToLocalFolder(folder)}>
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <Folder className="w-8 h-8 text-primary shrink-0" />
+                      <span className="font-medium truncate">{folder}</span>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Drive Files */}
           {filteredFiles.length > 0 && (
             <div className="space-y-2">
               <h2 className="text-lg font-semibold text-muted-foreground">Archivos de Drive (solo lectura)</h2>
@@ -278,9 +346,7 @@ export default function Notes() {
                       <span className="text-2xl shrink-0">{getIcon(file.mimeType)}</span>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{file.name}</p>
-                        {file.modifiedTime && (
-                          <p className="text-xs text-muted-foreground">{new Date(file.modifiedTime).toLocaleDateString('es-ES')}</p>
-                        )}
+                        {file.modifiedTime && <p className="text-xs text-muted-foreground">{new Date(file.modifiedTime).toLocaleDateString('es-ES')}</p>}
                       </div>
                     </CardContent>
                   </Card>
@@ -313,8 +379,7 @@ export default function Notes() {
             </div>
           )}
 
-          {/* Empty state */}
-          {filteredFolders.length === 0 && filteredFiles.length === 0 && filteredDocs.length === 0 && (
+          {filteredFolders.length === 0 && filteredFiles.length === 0 && filteredDocs.length === 0 && filteredLocalFolders.length === 0 && (
             <div className="text-center py-16">
               <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-muted-foreground">
