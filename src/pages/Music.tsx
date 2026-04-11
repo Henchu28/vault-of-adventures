@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Trash2, Search, Music as MusicIcon, Play, Pause, Upload } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import MusicPlayer from '@/components/music/MusicPlayer';
 
 interface Song {
   id: number;
@@ -23,27 +24,13 @@ export default function Music() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [playingSong, setPlayingSong] = useState<number | null>(null);
+  const [playingSongId, setPlayingSongId] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Form state
   const [formName, setFormName] = useState('');
   const [formFile, setFormFile] = useState<File | null>(null);
 
-  useEffect(() => {
-    fetchSongs();
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
+  useEffect(() => { fetchSongs(); }, []);
 
   const fetchSongs = async () => {
     setLoading(true);
@@ -61,33 +48,21 @@ export default function Music() {
       toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
       return;
     }
-
     setUploading(true);
     let fileUrl: string | null = null;
-
     if (formFile) {
       const fileExt = formFile.name.split('.').pop();
       const fileName = `${Date.now()}-${formName.trim().replace(/\s+/g, '_')}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('songs')
-        .upload(fileName, formFile, { contentType: formFile.type });
-
+      const { error: uploadError } = await supabase.storage.from('songs').upload(fileName, formFile, { contentType: formFile.type });
       if (uploadError) {
         toast({ title: "Error", description: "No se pudo subir el archivo de audio", variant: "destructive" });
         setUploading(false);
         return;
       }
-
       const { data: urlData } = supabase.storage.from('songs').getPublicUrl(fileName);
       fileUrl = urlData.publicUrl;
     }
-
-    const { error } = await supabase.from('songs').insert({ 
-      name: formName.trim(),
-      file: fileUrl
-    });
-
+    const { error } = await supabase.from('songs').insert({ name: formName.trim(), file: fileUrl });
     if (error) {
       toast({ title: "Error", description: "No se pudo añadir la canción", variant: "destructive" });
     } else {
@@ -101,50 +76,29 @@ export default function Music() {
   };
 
   const handleDelete = async (song: Song) => {
-    // Delete file from storage if exists
     if (song.file) {
       const path = song.file.split('/songs/').pop();
-      if (path) {
-        await supabase.storage.from('songs').remove([path]);
-      }
+      if (path) await supabase.storage.from('songs').remove([path]);
     }
-    
     const { error } = await supabase.from('songs').delete().eq('id', song.id);
     if (error) {
       toast({ title: "Error", description: "Failed to delete song", variant: "destructive" });
     } else {
-      if (playingSong === song.id) {
-        audioRef.current?.pause();
-        audioRef.current = null;
-        setPlayingSong(null);
-      }
+      if (playingSongId === song.id) setPlayingSongId(null);
       toast({ title: "Success", description: "Song deleted successfully" });
       fetchSongs();
     }
   };
 
-  const togglePlay = (song: Song) => {
-    if (playingSong === song.id) {
-      audioRef.current?.pause();
-      audioRef.current = null;
-      setPlayingSong(null);
-    } else {
-      if (!song.file) {
-        toast({ title: "Sin archivo", description: "Esta canción no tiene archivo de audio", variant: "destructive" });
-        return;
-      }
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      const audio = new Audio(song.file);
-      audio.play();
-      audio.onended = () => setPlayingSong(null);
-      audioRef.current = audio;
-      setPlayingSong(song.id);
+  const handlePlaySong = (song: Song) => {
+    if (!song.file) {
+      toast({ title: "Sin archivo", description: "Esta canción no tiene archivo de audio", variant: "destructive" });
+      return;
     }
+    setPlayingSongId(playingSongId === song.id ? null : song.id);
   };
 
-  const filteredSongs = songs.filter(song => 
+  const filteredSongs = songs.filter(song =>
     song.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -158,15 +112,10 @@ export default function Music() {
         <h1 className="text-3xl font-bold">Music Library</h1>
         <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) { setFormName(''); setFormFile(null); } }}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Song
-            </Button>
+            <Button><Plus className="w-4 h-4 mr-2" />Add Song</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nueva Canción</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Nueva Canción</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div>
                 <Label>Nombre *</Label>
@@ -174,24 +123,11 @@ export default function Music() {
               </div>
               <div>
                 <Label>Archivo de audio</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input 
-                    type="file" 
-                    accept=".mp3,.mp4,.aac,audio/mpeg,audio/mp4,audio/aac"
-                    onChange={(e) => setFormFile(e.target.files?.[0] || null)}
-                  />
-                </div>
+                <Input type="file" accept=".mp3,.mp4,.aac,audio/mpeg,audio/mp4,audio/aac" onChange={(e) => setFormFile(e.target.files?.[0] || null)} className="mt-1" />
                 <p className="text-xs text-muted-foreground mt-1">Formatos: MP3, MP4, AAC</p>
               </div>
               <Button onClick={handleCreate} className="w-full" disabled={uploading}>
-                {uploading ? (
-                  <>
-                    <Upload className="w-4 h-4 mr-2 animate-spin" />
-                    Subiendo...
-                  </>
-                ) : (
-                  'Añadir Canción'
-                )}
+                {uploading ? (<><Upload className="w-4 h-4 mr-2 animate-spin" />Subiendo...</>) : 'Añadir Canción'}
               </Button>
             </div>
           </DialogContent>
@@ -203,29 +139,15 @@ export default function Music() {
         <Input placeholder="Search songs..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <MusicIcon className="w-5 h-5" />
-            <span>Now Playing</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            {playingSong ? (
-              <div className="text-center">
-                <p className="text-lg font-medium mb-2">{songs.find(s => s.id === playingSong)?.name}</p>
-                <Button onClick={() => { audioRef.current?.pause(); audioRef.current = null; setPlayingSong(null); }}>
-                  <Pause className="w-4 h-4 mr-2" />
-                  Stop
-                </Button>
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No song playing</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Now Playing - Spotify-style player */}
+      {playingSongId && (
+        <MusicPlayer
+          songs={songs}
+          currentSongId={playingSongId}
+          onSongChange={setPlayingSongId}
+          onStop={() => setPlayingSongId(null)}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredSongs.map((song) => (
@@ -244,9 +166,9 @@ export default function Music() {
             <CardContent>
               <div className="flex items-center justify-center">
                 {song.file ? (
-                  <Button variant={playingSong === song.id ? "secondary" : "default"} onClick={() => togglePlay(song)}>
-                    {playingSong === song.id ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-                    {playingSong === song.id ? 'Pause' : 'Play'}
+                  <Button variant={playingSongId === song.id ? "secondary" : "default"} onClick={() => handlePlaySong(song)}>
+                    {playingSongId === song.id ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                    {playingSongId === song.id ? 'Playing' : 'Play'}
                   </Button>
                 ) : (
                   <p className="text-sm text-muted-foreground">Sin archivo de audio</p>
