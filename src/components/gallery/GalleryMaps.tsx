@@ -139,7 +139,9 @@ export function GalleryMaps() {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    return { x: (e.clientX - rect.left) / zoom, y: (e.clientY - rect.top) / zoom };
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
   };
 
   const startDraw = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -229,7 +231,7 @@ export function GalleryMaps() {
 
       {/* Map Viewer with Drawing */}
       <Dialog open={!!viewingMap} onOpenChange={(open) => { if (!open) { setViewingMap(null); setZoom(1); setPaths([]); setDrawMode(false); } }}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] w-auto p-0 overflow-hidden">
+        <DialogContent className="max-w-[98vw] max-h-[98vh] w-[98vw] h-[98vh] p-0 overflow-hidden">
           <div className="relative">
             <div className="absolute top-3 left-3 z-10 bg-background/80 backdrop-blur-sm rounded-md px-3 py-1">
               <span className="font-semibold text-sm">{viewingMap?.name}</span>
@@ -249,7 +251,7 @@ export function GalleryMaps() {
               <Button variant="secondary" size="icon" onClick={() => setZoom(z => Math.max(z - 0.25, 0.25))}><ZoomOut className="w-4 h-4" /></Button>
               <Button variant="secondary" size="icon" onClick={() => setZoom(1)}>1:1</Button>
             </div>
-            <div className="overflow-auto max-h-[90vh] max-w-[95vw] flex items-center justify-center bg-black/90 min-h-[400px]" ref={containerRef}>
+            <div className="overflow-auto h-[calc(98vh-4rem)] w-full flex items-center justify-center bg-black/90" ref={containerRef}>
               {viewingMap?.image_url && (
                 <div className="relative" style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}>
                   <img src={viewingMap.image_url} alt={viewingMap.name} onLoad={(e) => {

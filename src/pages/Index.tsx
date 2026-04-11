@@ -167,15 +167,15 @@ const Index = () => {
           </div>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <span>Maps</span>
+              <span>Gallery</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <CardDescription className="mb-4">
-              Explore your world maps
+              Explore maps and character photos
             </CardDescription>
-            <Link to="/maps">
-              <Button className="w-full bg-primary hover:bg-primary/90">View Maps</Button>
+            <Link to="/gallery">
+              <Button className="w-full bg-primary hover:bg-primary/90">View Gallery</Button>
             </Link>
           </CardContent>
         </Card>
