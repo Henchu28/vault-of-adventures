@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -29,66 +29,80 @@ export default function MusicPlayer({ songs, currentSongId, onSongChange, onStop
   const [shuffle, setShuffle] = useState(false);
   const [loopMode, setLoopMode] = useState<LoopMode>('off');
 
-  const currentSong = songs.find(s => s.id === currentSongId);
+  // Use refs to avoid stale closures in audio event handlers
+  const loopModeRef = useRef(loopMode);
+  const shuffleRef = useRef(shuffle);
+  const currentSongIdRef = useRef(currentSongId);
+  const songsRef = useRef(songs);
+  const onSongChangeRef = useRef(onSongChange);
 
-  // Playable songs only
+  useEffect(() => { loopModeRef.current = loopMode; }, [loopMode]);
+  useEffect(() => { shuffleRef.current = shuffle; }, [shuffle]);
+  useEffect(() => { currentSongIdRef.current = currentSongId; }, [currentSongId]);
+  useEffect(() => { songsRef.current = songs; }, [songs]);
+  useEffect(() => { onSongChangeRef.current = onSongChange; }, [onSongChange]);
+
+  const currentSong = songs.find(s => s.id === currentSongId);
   const playableSongs = songs.filter(s => s.file);
 
-  const createAudio = useCallback((song: Song) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
+  const getNextSongId = (direction: 1 | -1): number | null => {
+    const playable = songsRef.current.filter(s => s.file);
+    if (playable.length === 0) return null;
+    const currentIndex = playable.findIndex(s => s.id === currentSongIdRef.current);
+    if (shuffleRef.current && direction === 1) {
+      let next: number;
+      do { next = Math.floor(Math.random() * playable.length); } while (next === currentIndex && playable.length > 1);
+      return playable[next].id;
     }
-    if (!song.file) return;
-    const audio = new Audio(song.file);
-    audio.addEventListener('loadedmetadata', () => setDuration(audio.duration));
-    audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
-    audio.addEventListener('ended', () => handleSongEnd());
-    audioRef.current = audio;
-    audio.play();
-    setIsPlaying(true);
-  }, []);
+    let nextIndex = currentIndex + direction;
+    if (nextIndex >= playable.length) {
+      return loopModeRef.current === 'off' ? null : playable[0].id;
+    } else if (nextIndex < 0) {
+      return loopModeRef.current === 'off' ? null : playable[playable.length - 1].id;
+    }
+    return playable[nextIndex].id;
+  };
 
-  // Handle song end based on loop mode
-  const handleSongEnd = useCallback(() => {
-    if (loopMode === 'one') {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play();
+  const handleEnded = () => {
+    if (loopModeRef.current === 'one') {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play();
       }
     } else {
-      playNext();
+      const nextId = getNextSongId(1);
+      onSongChangeRef.current(nextId);
     }
-  }, [loopMode, shuffle, playableSongs, currentSongId]);
-
-  // Re-attach ended listener when loopMode/shuffle changes
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const handler = () => handleSongEnd();
-    audio.removeEventListener('ended', handler);
-    // Remove old, add new
-    const oldHandlers = (audio as any).__endHandler;
-    if (oldHandlers) audio.removeEventListener('ended', oldHandlers);
-    audio.addEventListener('ended', handler);
-    (audio as any).__endHandler = handler;
-  }, [handleSongEnd]);
+  };
 
   // Load audio when song changes
   useEffect(() => {
-    if (currentSong) {
-      createAudio(currentSong);
-    } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+    // Clean up previous
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.removeEventListener('ended', handleEnded);
+      audioRef.current = null;
+    }
+
+    if (!currentSong?.file) {
       setIsPlaying(false);
       setCurrentTime(0);
       setDuration(0);
+      return;
     }
+
+    const audio = new Audio(currentSong.file);
+    audio.addEventListener('loadedmetadata', () => setDuration(audio.duration));
+    audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
+    audio.addEventListener('ended', handleEnded);
+    audioRef.current = audio;
+    audio.play();
+    setIsPlaying(true);
+
     return () => {
-      // cleanup on unmount only
+      audio.pause();
+      audio.removeEventListener('ended', handleEnded);
     };
   }, [currentSongId]);
 
@@ -116,44 +130,18 @@ export default function MusicPlayer({ songs, currentSongId, onSongChange, onStop
     }
   };
 
-  const getNextIndex = (direction: 1 | -1): number => {
-    if (playableSongs.length === 0) return -1;
-    const currentIndex = playableSongs.findIndex(s => s.id === currentSongId);
-    if (shuffle && direction === 1) {
-      let next: number;
-      do { next = Math.floor(Math.random() * playableSongs.length); } while (next === currentIndex && playableSongs.length > 1);
-      return next;
-    }
-    let nextIndex = currentIndex + direction;
-    if (nextIndex >= playableSongs.length) {
-      nextIndex = loopMode === 'off' ? -1 : 0;
-    } else if (nextIndex < 0) {
-      nextIndex = loopMode === 'off' ? -1 : playableSongs.length - 1;
-    }
-    return nextIndex;
-  };
-
   const playNext = () => {
-    const idx = getNextIndex(1);
-    if (idx === -1) {
-      onSongChange(null);
-    } else {
-      onSongChange(playableSongs[idx].id);
-    }
+    const nextId = getNextSongId(1);
+    onSongChange(nextId);
   };
 
   const playPrev = () => {
-    // If more than 3 seconds in, restart song
     if (audioRef.current && audioRef.current.currentTime > 3) {
       audioRef.current.currentTime = 0;
       return;
     }
-    const idx = getNextIndex(-1);
-    if (idx === -1) {
-      onSongChange(null);
-    } else {
-      onSongChange(playableSongs[idx].id);
-    }
+    const prevId = getNextSongId(-1);
+    onSongChange(prevId);
   };
 
   const cycleLoop = () => {
@@ -170,12 +158,10 @@ export default function MusicPlayer({ songs, currentSongId, onSongChange, onStop
 
   return (
     <div className="bg-card border rounded-lg p-4 space-y-3">
-      {/* Header: song name + stop */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium truncate flex-1">{currentSong.name}</p>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-          audioRef.current?.pause();
-          audioRef.current = null;
+          if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
           setIsPlaying(false);
           onStop();
         }}>
@@ -183,58 +169,32 @@ export default function MusicPlayer({ songs, currentSongId, onSongChange, onStop
         </Button>
       </div>
 
-      {/* Seek slider */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span className="w-10 text-right">{formatTime(currentTime)}</span>
-        <Slider
-          value={[currentTime]}
-          max={duration || 1}
-          step={0.5}
-          onValueChange={seek}
-          className="flex-1"
-        />
+        <Slider value={[currentTime]} max={duration || 1} step={0.5} onValueChange={seek} className="flex-1" />
         <span className="w-10">{formatTime(duration)}</span>
       </div>
 
-      {/* Controls */}
       <div className="flex items-center justify-center gap-1">
-        {/* Shuffle */}
         <Button variant="ghost" size="icon" className={`h-8 w-8 ${shuffle ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => setShuffle(!shuffle)}>
           <Shuffle className="w-4 h-4" />
         </Button>
-
-        {/* Rewind 15s */}
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => skip(-15)}>
           <Rewind className="w-4 h-4" />
         </Button>
-
-        {/* Previous */}
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={playPrev}>
           <SkipBack className="w-4 h-4" />
         </Button>
-
-        {/* Play/Pause */}
         <Button variant="default" size="icon" className="h-10 w-10 rounded-full" onClick={togglePlayPause}>
           {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
         </Button>
-
-        {/* Next */}
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={playNext}>
           <SkipForward className="w-4 h-4" />
         </Button>
-
-        {/* Forward 15s */}
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => skip(15)}>
           <FastForward className="w-4 h-4" />
         </Button>
-
-        {/* Loop */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`h-8 w-8 ${loopMode !== 'off' ? 'text-primary' : 'text-muted-foreground'}`}
-          onClick={cycleLoop}
-        >
+        <Button variant="ghost" size="icon" className={`h-8 w-8 ${loopMode !== 'off' ? 'text-primary' : 'text-muted-foreground'}`} onClick={cycleLoop}>
           {loopMode === 'one' ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-4 h-4" />}
         </Button>
       </div>
