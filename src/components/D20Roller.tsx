@@ -53,8 +53,8 @@ export function D20Roller({ size = 'sm' }: D20RollerProps) {
     }, 1200);
   }, [rolling, spawnParticles]);
 
-  const dimensions = size === 'lg' ? 'w-14 h-14' : 'w-8 h-8';
-  const textSize = size === 'lg' ? 'text-xl' : 'text-sm';
+  const dimensions = size === 'lg' ? 'w-20 h-20' : 'w-10 h-10';
+  const textSize = size === 'lg' ? 'text-2xl' : 'text-base';
 
   return (
     <>
