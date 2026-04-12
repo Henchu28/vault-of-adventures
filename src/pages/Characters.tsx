@@ -106,7 +106,7 @@ export default function Characters() {
   const buildCharPayload = () => ({
     name: charForm.name.trim(),
     Raza: charForm.Raza || null,
-    Arquetipo: charForm.Arquetipo || null,
+    Arquetipo: charForm.Arquetipo || 'Unknown',
     Elemento: charForm.Elemento || 'Unknown',
     Esencia: charForm.Esencia || 'Unknown',
     Organización: charForm.Organización || 'Unknown',
@@ -119,7 +119,7 @@ export default function Characters() {
   const buildNpcPayload = () => ({
     name: npcForm.name.trim(),
     Raza: npcForm.Raza || null,
-    Arquetipo: npcForm.Arquetipo || null,
+    Arquetipo: npcForm.Arquetipo || 'Unknown',
     Elemento: npcForm.Elemento || 'Unknown',
     Esencia: npcForm.Esencia || 'Unknown',
     Organización: npcForm.Organización || 'Unknown',
@@ -301,7 +301,7 @@ export default function Characters() {
         <Select value={form.ID_Campaña} onValueChange={(v) => setForm({...form, ID_Campaña: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Ninguna</SelectItem>
+            <SelectItem value="none">Unknown</SelectItem>
             {campaigns.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -385,7 +385,7 @@ export default function Characters() {
         <Select value={form.ID_Campaña} onValueChange={(v) => setForm({...form, ID_Campaña: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Ninguna</SelectItem>
+            <SelectItem value="none">Unknown</SelectItem>
             {campaigns.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
