@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import d20Image from '@/assets/d20.png';
 
 interface Particle {
   id: number;
@@ -53,10 +54,7 @@ export function D20Roller({ size = 'sm' }: D20RollerProps) {
   }, [rolling, spawnParticles]);
 
   const dimensions = size === 'lg' ? 'w-14 h-14' : 'w-8 h-8';
-  const svgSize = size === 'lg' ? 'w-14 h-14' : 'w-8 h-8';
-  const fontSize = size === 'lg'
-    ? (showResult && result ? (result >= 10 ? '32' : '38') : '30')
-    : (showResult && result ? (result >= 10 ? '24' : '28') : '22');
+  const textSize = size === 'lg' ? 'text-xl' : 'text-sm';
 
   return (
     <>
@@ -85,33 +83,18 @@ export function D20Roller({ size = 'sm' }: D20RollerProps) {
         className={`relative ${dimensions} flex items-center justify-center cursor-pointer group`}
         title="Roll a D20!"
       >
-        <svg
-          viewBox="0 0 100 100"
-          className={`${svgSize} transition-transform ${rolling ? 'animate-dice-spin' : 'group-hover:scale-110'}`}
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <polygon
-            points="50,5 95,35 80,90 20,90 5,35"
-            className="fill-primary-foreground/20 stroke-primary-foreground"
-            strokeWidth="2"
+        <div className={`relative ${dimensions} flex items-center justify-center`}>
+          <img
+            src={d20Image}
+            alt="D20"
+            className={`${dimensions} transition-transform ${rolling ? 'animate-dice-spin' : 'group-hover:scale-110'} brightness-0 invert`}
           />
-          <line x1="50" y1="5" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
-          <line x1="5" y1="35" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
-          <line x1="95" y1="35" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
-          <line x1="20" y1="90" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
-          <line x1="80" y1="90" x2="50" y2="55" className="stroke-primary-foreground/60" strokeWidth="1.5" />
-          <text
-            x="50"
-            y="48"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="fill-primary-foreground font-bold"
-            fontSize={fontSize}
+          <span
+            className={`absolute inset-0 flex items-center justify-center font-bold ${textSize} text-primary-foreground pointer-events-none`}
           >
             {showResult && result ? result : '20'}
-          </text>
-        </svg>
+          </span>
+        </div>
 
         {showResult && result && (
           <span
