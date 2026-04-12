@@ -87,8 +87,7 @@ export function D20Roller({ size = 'sm' }: D20RollerProps) {
           <img
             src={d20Image}
             alt="D20"
-            className={`${dimensions} transition-transform ${rolling ? 'animate-dice-spin' : 'group-hover:scale-110'} invert dark:invert-0`}
-            style={{ filter: 'var(--d20-filter, invert(1))' }}
+            className={`${dimensions} transition-transform ${rolling ? 'animate-dice-spin' : 'group-hover:scale-110'} brightness-0 invert`}
           />
           <span
             className={`absolute inset-0 flex items-center justify-center font-bold ${textSize} text-primary-foreground pointer-events-none`}
