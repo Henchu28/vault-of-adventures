@@ -198,7 +198,7 @@ export function GalleryMaps() {
         <Select value={formCampaignId} onValueChange={setFormCampaignId}>
           <SelectTrigger><SelectValue placeholder="Seleccionar campaña" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Ninguna</SelectItem>
+            <SelectItem value="none">Unknown</SelectItem>
             {campaigns.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
