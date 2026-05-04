@@ -1,18 +1,40 @@
-import { useTheme, ThemeColor } from '@/hooks/useTheme';
+import { useState, useEffect } from 'react';
+import { useTheme } from '@/hooks/useTheme';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
-const colorOptions: { value: ThemeColor; label: string; preview: string }[] = [
-  { value: 'red', label: 'Rojo (Sangre de Dragón)', preview: 'bg-red-700' },
-  { value: 'green', label: 'Verde (Bosque Élfico)', preview: 'bg-green-700' },
-  { value: 'blue', label: 'Azul (Mar Profundo)', preview: 'bg-blue-700' },
-  { value: 'purple', label: 'Púrpura (Magia Arcana)', preview: 'bg-purple-700' },
-  { value: 'amber', label: 'Ámbar (Tesoro Antiguo)', preview: 'bg-amber-700' },
-];
+const PRESETS = ['#a32c3d', '#2c8a4f', '#2c5fa3', '#7d2ca3', '#a3702c', '#1f1f1f', '#d946ef'];
 
 export default function Settings() {
   const { themeColor, setThemeColor } = useTheme();
+  const { profile, user } = useAuth();
+  const { toast } = useToast();
+  const [displayName, setDisplayName] = useState('');
+  const [savingName, setSavingName] = useState(false);
+
+  useEffect(() => {
+    setDisplayName(profile?.display_name || '');
+  }, [profile?.display_name]);
+
+  const handleSaveName = async () => {
+    if (!user || !displayName.trim()) return;
+    setSavingName(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ display_name: displayName.trim() })
+      .eq('user_id', user.id);
+    setSavingName(false);
+    if (error) {
+      toast({ title: 'Error', description: 'No se pudo actualizar el nombre', variant: 'destructive' });
+    } else {
+      toast({ title: '¡Éxito!', description: 'Nombre actualizado. Recarga para verlo en todas partes.' });
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -20,28 +42,61 @@ export default function Settings() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Nombre de Usuario</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Label htmlFor="display-name">Display Name</Label>
+          <Input
+            id="display-name"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Tu nombre visible"
+          />
+          <Button onClick={handleSaveName} disabled={savingName || !displayName.trim() || displayName === profile?.display_name}>
+            {savingName ? 'Guardando...' : 'Guardar nombre'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Paleta de Color</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Label className="mb-4 block text-muted-foreground">
-            Elige el color principal de la interfaz
-          </Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {colorOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setThemeColor(option.value)}
-                className={cn(
-                  'flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left',
-                  themeColor === option.value
-                    ? 'border-primary bg-primary/10 shadow-md'
-                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                )}
-              >
-                <div className={cn('w-8 h-8 rounded-full shrink-0', option.preview)} />
-                <span className="font-medium text-sm">{option.label}</span>
-              </button>
-            ))}
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="mb-2 block text-muted-foreground">Selecciona un color HEX personalizado</Label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={themeColor}
+                onChange={(e) => setThemeColor(e.target.value)}
+                className="w-16 h-12 rounded cursor-pointer border border-border"
+              />
+              <Input
+                value={themeColor}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setThemeColor(v);
+                }}
+                placeholder="#a32c3d"
+                className="font-mono max-w-[140px]"
+              />
+            </div>
+          </div>
+          <div>
+            <Label className="mb-2 block text-muted-foreground">Presets rápidos</Label>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((hex) => (
+                <button
+                  key={hex}
+                  onClick={() => setThemeColor(hex)}
+                  className="w-10 h-10 rounded-full border-2 border-border hover:scale-110 transition-transform"
+                  style={{ backgroundColor: hex }}
+                  title={hex}
+                  aria-label={`Color ${hex}`}
+                />
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
