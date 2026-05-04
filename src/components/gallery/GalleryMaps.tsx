@@ -217,12 +217,10 @@ export function GalleryMaps() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div />
-        {isMaster && (
-          <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Add Map</Button></DialogTrigger>
-            <DialogContent><DialogHeader><DialogTitle>Nuevo Mapa</DialogTitle></DialogHeader>{mapFormJSX(false)}</DialogContent>
-          </Dialog>
-        )}
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Add Map</Button></DialogTrigger>
+          <DialogContent><DialogHeader><DialogTitle>Nuevo Mapa</DialogTitle></DialogHeader>{mapFormJSX(false)}</DialogContent>
+        </Dialog>
       </div>
 
       <Dialog open={!!editingMap} onOpenChange={(open) => { if (!open) { setEditingMap(null); resetForm(); } }}>
@@ -289,12 +287,10 @@ export function GalleryMaps() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center space-x-2"><Map className="w-5 h-5" /><span>{map.name}</span></div>
-                {isMaster && (
-                  <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(map)}><Edit className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(map)}><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-                )}
+                <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" onClick={() => openEdit(map)}><Edit className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(map)}><Trash2 className="w-4 h-4" /></Button>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>

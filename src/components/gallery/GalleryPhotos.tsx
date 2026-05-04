@@ -51,7 +51,6 @@ export function GalleryPhotos() {
   };
 
   const handleDelete = async (photo: CharacterPhoto) => {
-    if (!isMaster) return;
     const path = photo.image_url.split('/character-photos/').pop();
     if (path) await supabase.storage.from('character-photos').remove([path]);
     const { error } = await supabase.from('character_photos').delete().eq('id', photo.id);
@@ -64,21 +63,19 @@ export function GalleryPhotos() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        {isMaster && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Subir Foto</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Subir Foto de Personaje</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <div><Label>Nombre *</Label><Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Nombre del personaje" /></div>
-                <div><Label>Imagen *</Label><Input type="file" accept="image/*" onChange={e => setFormImage(e.target.files?.[0] || null)} /></div>
-                <Button onClick={handleUpload} className="w-full" disabled={uploading || !formName.trim() || !formImage}>
-                  {uploading ? 'Subiendo...' : 'Subir Foto'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Subir Foto</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Subir Foto de Personaje</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div><Label>Nombre *</Label><Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Nombre del personaje" /></div>
+              <div><Label>Imagen *</Label><Input type="file" accept="image/*" onChange={e => setFormImage(e.target.files?.[0] || null)} /></div>
+              <Button onClick={handleUpload} className="w-full" disabled={uploading || !formName.trim() || !formImage}>
+                {uploading ? 'Subiendo...' : 'Subir Foto'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Photo viewer */}
@@ -98,11 +95,9 @@ export function GalleryPhotos() {
               <img src={photo.image_url} alt={photo.name} className="w-full h-48 object-cover" />
               <div className="p-3 flex items-center justify-between">
                 <span className="font-medium text-sm truncate">{photo.name}</span>
-                {isMaster && (
-                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(photo); }}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(photo); }}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>
