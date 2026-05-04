@@ -102,7 +102,6 @@ export function GalleryMaps() {
   };
 
   const handleDelete = async (map: MapData) => {
-    if (!isMaster) return;
     if (map.image_url) { const path = map.image_url.split('/maps/').pop(); if (path) await supabase.storage.from('maps').remove([path]); }
     const { error } = await supabase.from('maps').delete().eq('id', map.id);
     if (error) toast({ title: "Error", description: "No se pudo eliminar", variant: "destructive" });
