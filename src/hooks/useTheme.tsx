@@ -1,105 +1,66 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type ThemeColor = 'red' | 'green' | 'blue' | 'purple' | 'amber';
-
 interface ThemeContextType {
-  themeColor: ThemeColor;
-  setThemeColor: (color: ThemeColor) => void;
+  themeColor: string; // hex
+  setThemeColor: (hex: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const themeConfigs: Record<ThemeColor, { light: Record<string, string>; dark: Record<string, string> }> = {
-  red: {
-    light: {
-      '--primary': '350 70% 35%',
-      '--primary-foreground': '45 15% 97%',
-      '--ring': '350 70% 35%',
-    },
-    dark: {
-      '--primary': '350 65% 55%',
-      '--primary-foreground': '220 15% 8%',
-      '--ring': '350 65% 55%',
-    },
-  },
-  green: {
-    light: {
-      '--primary': '150 60% 30%',
-      '--primary-foreground': '45 15% 97%',
-      '--ring': '150 60% 30%',
-    },
-    dark: {
-      '--primary': '150 55% 50%',
-      '--primary-foreground': '220 15% 8%',
-      '--ring': '150 55% 50%',
-    },
-  },
-  blue: {
-    light: {
-      '--primary': '215 70% 40%',
-      '--primary-foreground': '45 15% 97%',
-      '--ring': '215 70% 40%',
-    },
-    dark: {
-      '--primary': '215 65% 55%',
-      '--primary-foreground': '220 15% 8%',
-      '--ring': '215 65% 55%',
-    },
-  },
-  purple: {
-    light: {
-      '--primary': '270 60% 40%',
-      '--primary-foreground': '45 15% 97%',
-      '--ring': '270 60% 40%',
-    },
-    dark: {
-      '--primary': '270 60% 65%',
-      '--primary-foreground': '220 15% 8%',
-      '--ring': '270 60% 65%',
-    },
-  },
-  amber: {
-    light: {
-      '--primary': '30 80% 40%',
-      '--primary-foreground': '45 15% 97%',
-      '--ring': '30 80% 40%',
-    },
-    dark: {
-      '--primary': '30 75% 55%',
-      '--primary-foreground': '220 15% 8%',
-      '--ring': '30 75% 55%',
-    },
-  },
-};
+const DEFAULT_HEX = '#a32c3d';
 
-function applyTheme(color: ThemeColor) {
+// Convert hex to HSL components (h, s, l) where s/l are percentages
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const m = hex.replace('#', '');
+  const bigint = parseInt(m.length === 3 ? m.split('').map(c => c + c).join('') : m, 16);
+  const r = ((bigint >> 16) & 255) / 255;
+  const g = ((bigint >> 8) & 255) / 255;
+  const b = (bigint & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+function applyTheme(hex: string) {
   const root = document.documentElement;
   const isDark = root.classList.contains('dark');
-  const config = isDark ? themeConfigs[color].dark : themeConfigs[color].light;
-  Object.entries(config).forEach(([key, value]) => {
-    root.style.setProperty(key, value);
-  });
+  const { h, s, l } = hexToHsl(hex);
+  // Adjust lightness slightly based on dark mode for contrast
+  const adjustedL = isDark ? Math.min(Math.max(l, 50), 65) : Math.min(Math.max(l, 30), 45);
+  const primary = `${h} ${s}% ${adjustedL}%`;
+  const fg = adjustedL > 55 ? '220 15% 8%' : '45 15% 97%';
+  root.style.setProperty('--primary', primary);
+  root.style.setProperty('--primary-foreground', fg);
+  root.style.setProperty('--ring', primary);
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [themeColor, setThemeColorState] = useState<ThemeColor>(() => {
-    return (localStorage.getItem('theme-color') as ThemeColor) || 'red';
+  const [themeColor, setThemeColorState] = useState<string>(() => {
+    return localStorage.getItem('theme-color-hex') || DEFAULT_HEX;
   });
 
-  const setThemeColor = (color: ThemeColor) => {
-    setThemeColorState(color);
-    localStorage.setItem('theme-color', color);
+  const setThemeColor = (hex: string) => {
+    setThemeColorState(hex);
+    localStorage.setItem('theme-color-hex', hex);
   };
 
   useEffect(() => {
     applyTheme(themeColor);
   }, [themeColor]);
 
-  // Re-apply when dark mode changes
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      applyTheme(themeColor);
-    });
+    const observer = new MutationObserver(() => applyTheme(themeColor));
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
   }, [themeColor]);
