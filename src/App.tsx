@@ -15,6 +15,7 @@ import Gallery from "./pages/Gallery";
 import Music from "./pages/Music";
 import Notes from "./pages/Notes";
 import Settings from "./pages/Settings";
+import Ficha from "./pages/Ficha";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,9 @@ const App = () => (
               } />
               <Route path="/settings" element={
                 <ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>
+              } />
+              <Route path="/ficha" element={
+                <ProtectedRoute><Layout><Ficha /></Layout></ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
             </Routes>
