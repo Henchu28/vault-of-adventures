@@ -208,6 +208,10 @@ export default function Campaigns() {
           <TabsContent value="inventario">
             <CampaignInventory campaignId={selectedCampaign.id} />
           </TabsContent>
+
+          <TabsContent value="rumores">
+            <CampaignRumors campaignId={selectedCampaign.id} />
+          </TabsContent>
         </Tabs>
       </div>
     );
