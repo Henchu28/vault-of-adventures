@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Sword, Shield, ArrowLeft, Loader2, ChevronLeft, ChevronRight, BookOpen, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Sword, Shield, ArrowLeft, Loader2, ChevronLeft, ChevronRight, BookOpen, Package, MessageCircleQuestion } from 'lucide-react';
+import { CampaignRumors } from '@/components/campaigns/CampaignRumors';
 import { useToast } from '@/components/ui/use-toast';
 import campaignsImg from '@/assets/campaigns-card.jpg';
 import { CampaignInventory } from '@/components/campaigns/CampaignInventory';
