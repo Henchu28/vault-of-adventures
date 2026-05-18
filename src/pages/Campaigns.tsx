@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Sword, Shield, ArrowLeft, Loader2, ChevronLeft, ChevronRight, BookOpen, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Sword, Shield, ArrowLeft, Loader2, ChevronLeft, ChevronRight, BookOpen, Package, MessageCircleQuestion } from 'lucide-react';
+import { CampaignRumors } from '@/components/campaigns/CampaignRumors';
 import { useToast } from '@/components/ui/use-toast';
 import campaignsImg from '@/assets/campaigns-card.jpg';
 import { CampaignInventory } from '@/components/campaigns/CampaignInventory';
@@ -133,6 +134,7 @@ export default function Campaigns() {
           <TabsList>
             <TabsTrigger value="historia" className="flex items-center gap-2"><BookOpen className="w-4 h-4" />Historia</TabsTrigger>
             <TabsTrigger value="inventario" className="flex items-center gap-2"><Package className="w-4 h-4" />Inventario</TabsTrigger>
+            <TabsTrigger value="rumores" className="flex items-center gap-2"><MessageCircleQuestion className="w-4 h-4" />Rumores</TabsTrigger>
           </TabsList>
 
           <TabsContent value="historia">
@@ -205,6 +207,10 @@ export default function Campaigns() {
 
           <TabsContent value="inventario">
             <CampaignInventory campaignId={selectedCampaign.id} />
+          </TabsContent>
+
+          <TabsContent value="rumores">
+            <CampaignRumors campaignId={selectedCampaign.id} />
           </TabsContent>
         </Tabs>
       </div>

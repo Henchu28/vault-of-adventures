@@ -52,6 +52,36 @@ export type Database = {
           },
         ]
       }
+      campaign_rumors: {
+        Row: {
+          campaign_id: number
+          created_at: string
+          created_by: string
+          id: string
+          status: Database["public"]["Enums"]["rumor_status"]
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: number
+          created_at?: string
+          created_by: string
+          id?: string
+          status?: Database["public"]["Enums"]["rumor_status"]
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          status?: Database["public"]["Enums"]["rumor_status"]
+          text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           description: string | null
@@ -440,6 +470,7 @@ export type Database = {
     }
     Enums: {
       app_role: "master" | "player"
+      rumor_status: "unknown" | "cold" | "warm" | "hot" | "proven"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -568,6 +599,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["master", "player"],
+      rumor_status: ["unknown", "cold", "warm", "hot", "proven"],
     },
   },
 } as const
