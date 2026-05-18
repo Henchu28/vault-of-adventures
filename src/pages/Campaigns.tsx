@@ -134,6 +134,7 @@ export default function Campaigns() {
           <TabsList>
             <TabsTrigger value="historia" className="flex items-center gap-2"><BookOpen className="w-4 h-4" />Historia</TabsTrigger>
             <TabsTrigger value="inventario" className="flex items-center gap-2"><Package className="w-4 h-4" />Inventario</TabsTrigger>
+            <TabsTrigger value="rumores" className="flex items-center gap-2"><MessageCircleQuestion className="w-4 h-4" />Rumores</TabsTrigger>
           </TabsList>
 
           <TabsContent value="historia">
