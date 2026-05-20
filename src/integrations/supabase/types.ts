@@ -129,43 +129,55 @@ export type Database = {
       }
       characters: {
         Row: {
+          apariencia: string | null
           Arquetipo: string | null
           description: string | null
           Edad: number | null
           Elemento: string | null
           Esencia: string | null
           Estado: string | null
+          historia: string | null
           id: number
           ID_Campaña: number | null
           name: string
           Organización: string
+          personalidad: string | null
           Raza: string | null
+          user_id: string | null
         }
         Insert: {
+          apariencia?: string | null
           Arquetipo?: string | null
           description?: string | null
           Edad?: number | null
           Elemento?: string | null
           Esencia?: string | null
           Estado?: string | null
+          historia?: string | null
           id?: number
           ID_Campaña?: number | null
           name?: string
           Organización?: string
+          personalidad?: string | null
           Raza?: string | null
+          user_id?: string | null
         }
         Update: {
+          apariencia?: string | null
           Arquetipo?: string | null
           description?: string | null
           Edad?: number | null
           Elemento?: string | null
           Esencia?: string | null
           Estado?: string | null
+          historia?: string | null
           id?: number
           ID_Campaña?: number | null
           name?: string
           Organización?: string
+          personalidad?: string | null
           Raza?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -282,44 +294,53 @@ export type Database = {
       npcs: {
         Row: {
           alignment: string
+          apariencia: string | null
           Arquetipo: string | null
           description: string | null
           Edad: number
           Elemento: string | null
           Esencia: string | null
           Estado: string | null
+          historia: string | null
           id: number
           ID_Campaña: number | null
           name: string
           Organización: string | null
+          personalidad: string | null
           Raza: string | null
         }
         Insert: {
           alignment?: string
+          apariencia?: string | null
           Arquetipo?: string | null
           description?: string | null
           Edad?: number
           Elemento?: string | null
           Esencia?: string | null
           Estado?: string | null
+          historia?: string | null
           id?: number
           ID_Campaña?: number | null
           name: string
           Organización?: string | null
+          personalidad?: string | null
           Raza?: string | null
         }
         Update: {
           alignment?: string
+          apariencia?: string | null
           Arquetipo?: string | null
           description?: string | null
           Edad?: number
           Elemento?: string | null
           Esencia?: string | null
           Estado?: string | null
+          historia?: string | null
           id?: number
           ID_Campaña?: number | null
           name?: string
           Organización?: string | null
+          personalidad?: string | null
           Raza?: string | null
         }
         Relationships: [
@@ -460,6 +481,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_characters_public: {
+        Args: never
+        Returns: {
+          Arquetipo: string
+          Edad: number
+          Elemento: string
+          Esencia: string
+          Estado: string
+          id: number
+          ID_Campaña: number
+          name: string
+          Organización: string
+          Raza: string
+          user_id: string
+        }[]
+      }
+      get_npcs_public: {
+        Args: never
+        Returns: {
+          alignment: string
+          Arquetipo: string
+          Edad: number
+          Elemento: string
+          Esencia: string
+          Estado: string
+          id: number
+          ID_Campaña: number
+          name: string
+          Organización: string
+          Raza: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
