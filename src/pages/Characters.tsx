@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit, Trash2, Search, User, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-interface Character {
+interface CharacterPublic {
   id: number;
   name: string;
   Raza: string | null;
@@ -23,10 +23,17 @@ interface Character {
   Edad: number | null;
   Estado: string | null;
   ID_Campaña: number | null;
-  description: string | null;
+  user_id: string | null;
 }
 
-interface NPC {
+interface CharacterFull extends CharacterPublic {
+  description: string | null;
+  historia: string | null;
+  apariencia: string | null;
+  personalidad: string | null;
+}
+
+interface NPCPublic {
   id: number;
   name: string;
   Raza: string | null;
@@ -38,13 +45,17 @@ interface NPC {
   Estado: string | null;
   ID_Campaña: number | null;
   alignment: string;
-  description: string | null;
 }
 
-interface Campaign {
-  id: number;
-  name: string;
+interface NPCFull extends NPCPublic {
+  description: string | null;
+  historia: string | null;
+  apariencia: string | null;
+  personalidad: string | null;
 }
+
+interface Campaign { id: number; name: string; }
+interface ProfileLite { user_id: string; display_name: string | null; }
 
 const ARQUETIPOS = ['Emisor', 'Modulador', 'Canalizador', 'Invocador', 'Focalizador', 'Compuesto'];
 const ELEMENTOS = ['Fuego', 'Hielo', 'Tierra', 'Planta', 'Luz', 'Oscuridad', 'Viento', 'Electricidad', 'Espiritual', 'Compuesto'];
@@ -52,11 +63,11 @@ const ESENCIAS = ['Nominancia', 'Transmutación', 'Distorsión', 'Cronomancia', 
 const ALIGNMENTS = ['Aliado', 'Enemigo', 'Neutral', 'Unknown'];
 
 export default function Characters() {
-  const { isMaster } = useAuth();
+  const { isMaster, user } = useAuth();
   const { toast } = useToast();
-  
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [npcs, setNPCs] = useState<NPC[]>([]);
+
+  const [characters, setCharacters] = useState<CharacterPublic[]>([]);
+  const [npcs, setNPCs] = useState<NPCPublic[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterArchetype, setFilterArchetype] = useState('all');
   const [filterElement, setFilterElement] = useState('all');
@@ -64,39 +75,51 @@ export default function Characters() {
   const [filterOrg, setFilterOrg] = useState('all');
   const [organizations, setOrganizations] = useState<string[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [profiles, setProfiles] = useState<ProfileLite[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [isCharacterDialogOpen, setIsCharacterDialogOpen] = useState(false);
   const [isNPCDialogOpen, setIsNPCDialogOpen] = useState(false);
-  const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
-  const [editingNPC, setEditingNPC] = useState<NPC | null>(null);
+  const [editingCharacter, setEditingCharacter] = useState<CharacterFull | null>(null);
+  const [editingNPC, setEditingNPC] = useState<NPCFull | null>(null);
+
+  // Detail dialog state
+  const [viewingCharacter, setViewingCharacter] = useState<CharacterPublic | null>(null);
+  const [viewingCharacterFull, setViewingCharacterFull] = useState<CharacterFull | null>(null);
+  const [viewingNPC, setViewingNPC] = useState<NPCPublic | null>(null);
+  const [viewingNPCFull, setViewingNPCFull] = useState<NPCFull | null>(null);
 
   const defaultCharForm = {
     name: '', Raza: '', Arquetipo: '', Elemento: 'Unknown', Esencia: 'Unknown',
-    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: '', description: ''
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: '',
+    description: '', historia: '', apariencia: '', personalidad: '',
+    user_id: '' as string,
   };
   const defaultNpcForm = {
     name: '', Raza: '', Arquetipo: '', Elemento: 'Unknown', Esencia: 'Unknown',
-    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: '', alignment: 'Unknown', description: ''
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: '',
+    alignment: 'Unknown', description: '', historia: '', apariencia: '', personalidad: '',
   };
 
   const [charForm, setCharForm] = useState(defaultCharForm);
   const [npcForm, setNpcForm] = useState(defaultNpcForm);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [isMaster]);
 
   const fetchData = async () => {
     setLoading(true);
-    const [charactersResult, npcsResult, orgsResult, campaignsResult] = await Promise.all([
-      supabase.from('characters').select('*'),
-      supabase.from('npcs').select('*'),
+    const [charsRes, npcsRes, orgsRes, campaignsRes, profilesRes] = await Promise.all([
+      supabase.rpc('get_characters_public'),
+      supabase.rpc('get_npcs_public'),
       supabase.from('organizations').select('org_name'),
       supabase.from('campaigns').select('id, name'),
+      isMaster ? supabase.from('profiles').select('user_id, display_name') : Promise.resolve({ data: [] as ProfileLite[] }),
     ]);
-    if (charactersResult.data) setCharacters(charactersResult.data);
-    if (npcsResult.data) setNPCs(npcsResult.data);
-    if (orgsResult.data) setOrganizations(orgsResult.data.map(o => o.org_name));
-    if (campaignsResult.data) setCampaigns(campaignsResult.data);
+    if (charsRes.data) setCharacters(charsRes.data as CharacterPublic[]);
+    if (npcsRes.data) setNPCs(npcsRes.data as NPCPublic[]);
+    if (orgsRes.data) setOrganizations(orgsRes.data.map((o: any) => o.org_name));
+    if (campaignsRes.data) setCampaigns(campaignsRes.data);
+    if (profilesRes.data) setProfiles(profilesRes.data as ProfileLite[]);
     setLoading(false);
   };
 
@@ -112,8 +135,12 @@ export default function Characters() {
     Organización: charForm.Organización || 'Unknown',
     Edad: charForm.Edad || 0,
     Estado: charForm.Estado || 'Unknown',
-    ID_Campaña: charForm.ID_Campaña ? Number(charForm.ID_Campaña) : null,
+    ID_Campaña: charForm.ID_Campaña && charForm.ID_Campaña !== 'none' ? Number(charForm.ID_Campaña) : null,
     description: charForm.description || '',
+    historia: charForm.historia || '',
+    apariencia: charForm.apariencia || '',
+    personalidad: charForm.personalidad || '',
+    user_id: charForm.user_id && charForm.user_id !== 'none' ? charForm.user_id : null,
   });
 
   const buildNpcPayload = () => ({
@@ -125,103 +152,101 @@ export default function Characters() {
     Organización: npcForm.Organización || 'Unknown',
     Edad: npcForm.Edad || 0,
     Estado: npcForm.Estado || 'Unknown',
-    ID_Campaña: npcForm.ID_Campaña ? Number(npcForm.ID_Campaña) : null,
+    ID_Campaña: npcForm.ID_Campaña && npcForm.ID_Campaña !== 'none' ? Number(npcForm.ID_Campaña) : null,
     alignment: npcForm.alignment || 'Unknown',
     description: npcForm.description || '',
+    historia: npcForm.historia || '',
+    apariencia: npcForm.apariencia || '',
+    personalidad: npcForm.personalidad || '',
   });
 
   const handleCreateCharacter = async () => {
-    if (!charForm.name.trim()) {
-      toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
-      return;
-    }
+    if (!charForm.name.trim()) { toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" }); return; }
     const { error } = await supabase.from('characters').insert(buildCharPayload());
-    if (error) {
-      toast({ title: "Error", description: "No se pudo crear el personaje", variant: "destructive" });
-    } else {
-      toast({ title: "¡Éxito!", description: "Personaje creado correctamente" });
-      resetCharForm();
-      setIsCharacterDialogOpen(false);
-      fetchData();
-    }
+    if (error) toast({ title: "Error", description: "No se pudo crear el personaje", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "Personaje creado" }); resetCharForm(); setIsCharacterDialogOpen(false); fetchData(); }
   };
 
   const handleEditCharacter = async () => {
     if (!editingCharacter || !charForm.name.trim()) return;
     const { error } = await supabase.from('characters').update(buildCharPayload()).eq('id', editingCharacter.id);
-    if (error) {
-      toast({ title: "Error", description: "No se pudo actualizar el personaje", variant: "destructive" });
-    } else {
-      toast({ title: "¡Éxito!", description: "Personaje actualizado correctamente" });
-      resetCharForm();
-      setEditingCharacter(null);
-      fetchData();
-    }
+    if (error) toast({ title: "Error", description: "No se pudo actualizar", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "Personaje actualizado" }); resetCharForm(); setEditingCharacter(null); fetchData(); }
   };
 
   const handleCreateNPC = async () => {
-    if (!npcForm.name.trim()) {
-      toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
-      return;
-    }
+    if (!npcForm.name.trim()) { toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" }); return; }
     const { error } = await supabase.from('npcs').insert(buildNpcPayload());
-    if (error) {
-      toast({ title: "Error", description: "No se pudo crear el NPC", variant: "destructive" });
-    } else {
-      toast({ title: "¡Éxito!", description: "NPC creado correctamente" });
-      resetNpcForm();
-      setIsNPCDialogOpen(false);
-      fetchData();
-    }
+    if (error) toast({ title: "Error", description: "No se pudo crear el NPC", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "NPC creado" }); resetNpcForm(); setIsNPCDialogOpen(false); fetchData(); }
   };
 
   const handleEditNPC = async () => {
     if (!editingNPC || !npcForm.name.trim()) return;
     const { error } = await supabase.from('npcs').update(buildNpcPayload()).eq('id', editingNPC.id);
-    if (error) {
-      toast({ title: "Error", description: "No se pudo actualizar el NPC", variant: "destructive" });
-    } else {
-      toast({ title: "¡Éxito!", description: "NPC actualizado correctamente" });
-      resetNpcForm();
-      setEditingNPC(null);
-      fetchData();
-    }
+    if (error) toast({ title: "Error", description: "No se pudo actualizar", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "NPC actualizado" }); resetNpcForm(); setEditingNPC(null); fetchData(); }
   };
 
-  const handleDeleteCharacter = async (character: Character) => {
+  const handleDeleteCharacter = async (id: number) => {
     if (!isMaster) return;
-    const { error } = await supabase.from('characters').delete().eq('id', character.id);
-    if (error) toast({ title: "Error", description: "No se pudo eliminar el personaje", variant: "destructive" });
-    else { toast({ title: "¡Éxito!", description: "Personaje eliminado correctamente" }); fetchData(); }
+    const { error } = await supabase.from('characters').delete().eq('id', id);
+    if (error) toast({ title: "Error", description: "No se pudo eliminar", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "Personaje eliminado" }); fetchData(); }
   };
 
-  const handleDeleteNPC = async (npc: NPC) => {
+  const handleDeleteNPC = async (id: number) => {
     if (!isMaster) return;
-    const { error } = await supabase.from('npcs').delete().eq('id', npc.id);
-    if (error) toast({ title: "Error", description: "No se pudo eliminar el NPC", variant: "destructive" });
-    else { toast({ title: "¡Éxito!", description: "NPC eliminado correctamente" }); fetchData(); }
+    const { error } = await supabase.from('npcs').delete().eq('id', id);
+    if (error) toast({ title: "Error", description: "No se pudo eliminar", variant: "destructive" });
+    else { toast({ title: "¡Éxito!", description: "NPC eliminado" }); fetchData(); }
   };
 
-  const openEditCharacter = (char: Character) => {
-    setEditingCharacter(char);
+  const openEditCharacter = async (charPub: CharacterPublic) => {
+    // Fetch full row (RLS allows master)
+    const { data } = await supabase.from('characters').select('*').eq('id', charPub.id).maybeSingle();
+    const c = (data || charPub) as CharacterFull;
+    setEditingCharacter(c);
     setCharForm({
-      name: char.name, Raza: char.Raza || '', Arquetipo: char.Arquetipo || '',
-      Elemento: char.Elemento || 'Unknown', Esencia: char.Esencia || 'Unknown',
-      Organización: char.Organización || 'Unknown', Edad: char.Edad || 0,
-      Estado: char.Estado || 'Unknown', ID_Campaña: char.ID_Campaña ? String(char.ID_Campaña) : '',
-      description: char.description || '',
+      name: c.name, Raza: c.Raza || '', Arquetipo: c.Arquetipo || '',
+      Elemento: c.Elemento || 'Unknown', Esencia: c.Esencia || 'Unknown',
+      Organización: c.Organización || 'Unknown', Edad: c.Edad || 0,
+      Estado: c.Estado || 'Unknown', ID_Campaña: c.ID_Campaña ? String(c.ID_Campaña) : '',
+      description: c.description || '', historia: c.historia || '',
+      apariencia: c.apariencia || '', personalidad: c.personalidad || '',
+      user_id: c.user_id || '',
     });
   };
 
-  const openEditNPC = (npc: NPC) => {
-    setEditingNPC(npc);
+  const openEditNPC = async (npcPub: NPCPublic) => {
+    const { data } = await supabase.from('npcs').select('*').eq('id', npcPub.id).maybeSingle();
+    const n = (data || npcPub) as NPCFull;
+    setEditingNPC(n);
     setNpcForm({
-      name: npc.name, Raza: npc.Raza || '', Arquetipo: npc.Arquetipo || '',
-      Elemento: npc.Elemento || 'Unknown', Esencia: npc.Esencia || 'Unknown',
-      Organización: npc.Organización || 'Unknown', Edad: npc.Edad || 0,
-      Estado: npc.Estado || 'Unknown', ID_Campaña: npc.ID_Campaña ? String(npc.ID_Campaña) : '',
-      alignment: npc.alignment || 'Unknown', description: npc.description || '',
+      name: n.name, Raza: n.Raza || '', Arquetipo: n.Arquetipo || '',
+      Elemento: n.Elemento || 'Unknown', Esencia: n.Esencia || 'Unknown',
+      Organización: n.Organización || 'Unknown', Edad: n.Edad || 0,
+      Estado: n.Estado || 'Unknown', ID_Campaña: n.ID_Campaña ? String(n.ID_Campaña) : '',
+      alignment: n.alignment || 'Unknown',
+      description: n.description || '', historia: n.historia || '',
+      apariencia: n.apariencia || '', personalidad: n.personalidad || '',
     });
+  };
+
+  // Open the wikipedia-like detail dialog
+  const openCharacterDetail = async (char: CharacterPublic) => {
+    setViewingCharacter(char);
+    setViewingCharacterFull(null);
+    // Try to fetch full data; RLS returns null if not allowed
+    const { data } = await supabase.from('characters').select('*').eq('id', char.id).maybeSingle();
+    if (data) setViewingCharacterFull(data as CharacterFull);
+  };
+
+  const openNPCDetail = async (npc: NPCPublic) => {
+    setViewingNPC(npc);
+    setViewingNPCFull(null);
+    const { data } = await supabase.from('npcs').select('*').eq('id', npc.id).maybeSingle();
+    if (data) setViewingNPCFull(data as NPCFull);
   };
 
   const filteredCharacters = characters.filter(char =>
@@ -240,6 +265,12 @@ export default function Characters() {
   );
 
   if (loading) return <div className="flex justify-center items-center min-h-[400px]">Loading characters...</div>;
+
+  const profileLabel = (uid: string | null | undefined) => {
+    if (!uid) return null;
+    const p = profiles.find(p => p.user_id === uid);
+    return p?.display_name || uid.slice(0, 8);
+  };
 
   const charFormJSX = (form: typeof defaultCharForm, setForm: (f: typeof defaultCharForm) => void, onSubmit: () => void, isEdit: boolean) => (
     <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-1">
@@ -298,7 +329,7 @@ export default function Characters() {
       </div>
       <div>
         <Label>Campaña</Label>
-        <Select value={form.ID_Campaña} onValueChange={(v) => setForm({...form, ID_Campaña: v})}>
+        <Select value={form.ID_Campaña || 'none'} onValueChange={(v) => setForm({...form, ID_Campaña: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Unknown</SelectItem>
@@ -306,9 +337,31 @@ export default function Characters() {
           </SelectContent>
         </Select>
       </div>
+      <div>
+        <Label>Jugador asociado</Label>
+        <Select value={form.user_id || 'none'} onValueChange={(v) => setForm({...form, user_id: v === 'none' ? '' : v})}>
+          <SelectTrigger><SelectValue placeholder="Sin jugador" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Sin jugador</SelectItem>
+            {profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.display_name || p.user_id.slice(0, 8)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="col-span-2">
-        <Label>Descripción (opcional)</Label>
-        <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} placeholder="Descripción o información extra del personaje..." rows={3} />
+        <Label>Descripción (privada, solo Máster)</Label>
+        <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} rows={2} />
+      </div>
+      <div className="col-span-2">
+        <Label>Historia</Label>
+        <Textarea value={form.historia} onChange={(e) => setForm({...form, historia: e.target.value})} rows={3} />
+      </div>
+      <div className="col-span-2">
+        <Label>Apariencia</Label>
+        <Textarea value={form.apariencia} onChange={(e) => setForm({...form, apariencia: e.target.value})} rows={3} />
+      </div>
+      <div className="col-span-2">
+        <Label>Personalidad</Label>
+        <Textarea value={form.personalidad} onChange={(e) => setForm({...form, personalidad: e.target.value})} rows={3} />
       </div>
       <div className="col-span-2">
         <Button onClick={onSubmit} className="w-full">{isEdit ? 'Guardar Cambios' : 'Crear Personaje'}</Button>
@@ -324,7 +377,7 @@ export default function Characters() {
       </div>
       <div>
         <Label>Raza</Label>
-        <Input value={form.Raza} onChange={(e) => setForm({...form, Raza: e.target.value})} placeholder="Ej: Humano, Elfo..." />
+        <Input value={form.Raza} onChange={(e) => setForm({...form, Raza: e.target.value})} />
       </div>
       <div>
         <Label>Edad</Label>
@@ -371,18 +424,16 @@ export default function Characters() {
         <Label>Alignment</Label>
         <Select value={form.alignment} onValueChange={(v) => setForm({...form, alignment: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-          <SelectContent>
-            {ALIGNMENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-          </SelectContent>
+          <SelectContent>{ALIGNMENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       <div>
         <Label>Estado</Label>
-        <Input value={form.Estado} onChange={(e) => setForm({...form, Estado: e.target.value})} placeholder="Ej: Vivo, Muerto..." />
+        <Input value={form.Estado} onChange={(e) => setForm({...form, Estado: e.target.value})} />
       </div>
       <div>
         <Label>Campaña</Label>
-        <Select value={form.ID_Campaña} onValueChange={(v) => setForm({...form, ID_Campaña: v})}>
+        <Select value={form.ID_Campaña || 'none'} onValueChange={(v) => setForm({...form, ID_Campaña: v})}>
           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Unknown</SelectItem>
@@ -391,8 +442,20 @@ export default function Characters() {
         </Select>
       </div>
       <div className="col-span-2">
-        <Label>Descripción (opcional)</Label>
-        <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} placeholder="Descripción o información extra del NPC..." rows={3} />
+        <Label>Descripción</Label>
+        <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} rows={2} />
+      </div>
+      <div className="col-span-2">
+        <Label>Historia</Label>
+        <Textarea value={form.historia} onChange={(e) => setForm({...form, historia: e.target.value})} rows={3} />
+      </div>
+      <div className="col-span-2">
+        <Label>Apariencia</Label>
+        <Textarea value={form.apariencia} onChange={(e) => setForm({...form, apariencia: e.target.value})} rows={3} />
+      </div>
+      <div className="col-span-2">
+        <Label>Personalidad</Label>
+        <Textarea value={form.personalidad} onChange={(e) => setForm({...form, personalidad: e.target.value})} rows={3} />
       </div>
       <div className="col-span-2">
         <Button onClick={onSubmit} className="w-full">{isEdit ? 'Guardar Cambios' : 'Crear NPC'}</Button>
@@ -435,6 +498,114 @@ export default function Characters() {
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Editar NPC</DialogTitle></DialogHeader>
           {npcFormJSX(npcForm, setNpcForm, handleEditNPC, true)}
+        </DialogContent>
+      </Dialog>
+
+      {/* Character detail (wiki-like) */}
+      <Dialog open={!!viewingCharacter} onOpenChange={(open) => { if (!open) { setViewingCharacter(null); setViewingCharacterFull(null); } }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          {viewingCharacter && (
+            <>
+              <DialogHeader><DialogTitle className="text-2xl">{viewingCharacter.name}</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 text-sm bg-muted/50 p-4 rounded-lg">
+                  <div><span className="font-semibold">Raza:</span> {viewingCharacter.Raza || '—'}</div>
+                  <div><span className="font-semibold">Arquetipo:</span> {viewingCharacter.Arquetipo || '—'}</div>
+                  <div><span className="font-semibold">Elemento:</span> {viewingCharacter.Elemento || '—'}</div>
+                  <div><span className="font-semibold">Esencia:</span> {viewingCharacter.Esencia || '—'}</div>
+                  <div><span className="font-semibold">Edad:</span> {viewingCharacter.Edad ?? '—'}</div>
+                  <div><span className="font-semibold">Organización:</span> {viewingCharacter.Organización || '—'}</div>
+                  <div><span className="font-semibold">Estado:</span> {viewingCharacter.Estado || '—'}</div>
+                  {isMaster && viewingCharacter.user_id && (
+                    <div><span className="font-semibold">Jugador:</span> {profileLabel(viewingCharacter.user_id)}</div>
+                  )}
+                </div>
+                {viewingCharacterFull ? (
+                  <div className="space-y-4">
+                    {isMaster && viewingCharacterFull.description && (
+                      <section>
+                        <h3 className="font-semibold text-lg mb-1">Descripción (privada del Máster)</h3>
+                        <p className="text-sm whitespace-pre-wrap text-muted-foreground italic">{viewingCharacterFull.description}</p>
+                      </section>
+                    )}
+                    {viewingCharacterFull.historia && (
+                      <section>
+                        <h3 className="font-semibold text-lg mb-1">Historia</h3>
+                        <p className="text-sm whitespace-pre-wrap">{viewingCharacterFull.historia}</p>
+                      </section>
+                    )}
+                    {viewingCharacterFull.apariencia && (
+                      <section>
+                        <h3 className="font-semibold text-lg mb-1">Apariencia</h3>
+                        <p className="text-sm whitespace-pre-wrap">{viewingCharacterFull.apariencia}</p>
+                      </section>
+                    )}
+                    {viewingCharacterFull.personalidad && (
+                      <section>
+                        <h3 className="font-semibold text-lg mb-1">Personalidad</h3>
+                        <p className="text-sm whitespace-pre-wrap">{viewingCharacterFull.personalidad}</p>
+                      </section>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Información ampliada visible solo para el Máster y el jugador asociado.</p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* NPC detail (wiki-like) */}
+      <Dialog open={!!viewingNPC} onOpenChange={(open) => { if (!open) { setViewingNPC(null); setViewingNPCFull(null); } }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          {viewingNPC && (
+            <>
+              <DialogHeader><DialogTitle className="text-2xl">{viewingNPC.name}</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 text-sm bg-muted/50 p-4 rounded-lg">
+                  <div><span className="font-semibold">Raza:</span> {viewingNPC.Raza || '—'}</div>
+                  <div><span className="font-semibold">Arquetipo:</span> {viewingNPC.Arquetipo || '—'}</div>
+                  <div><span className="font-semibold">Elemento:</span> {viewingNPC.Elemento || '—'}</div>
+                  <div><span className="font-semibold">Esencia:</span> {viewingNPC.Esencia || '—'}</div>
+                  <div><span className="font-semibold">Edad:</span> {viewingNPC.Edad ?? '—'}</div>
+                  <div><span className="font-semibold">Organización:</span> {viewingNPC.Organización || '—'}</div>
+                  <div><span className="font-semibold">Alignment:</span> {viewingNPC.alignment || '—'}</div>
+                  <div><span className="font-semibold">Estado:</span> {viewingNPC.Estado || '—'}</div>
+                </div>
+                {viewingNPCFull ? (
+                  <div className="space-y-4">
+                    {viewingNPCFull.description && (
+                      <section>
+                        <h3 className="font-semibold text-lg mb-1">Descripción</h3>
+                        <p className="text-sm whitespace-pre-wrap text-muted-foreground italic">{viewingNPCFull.description}</p>
+                      </section>
+                    )}
+                    {viewingNPCFull.historia && (
+                      <section>
+                        <h3 className="font-semibold text-lg mb-1">Historia</h3>
+                        <p className="text-sm whitespace-pre-wrap">{viewingNPCFull.historia}</p>
+                      </section>
+                    )}
+                    {viewingNPCFull.apariencia && (
+                      <section>
+                        <h3 className="font-semibold text-lg mb-1">Apariencia</h3>
+                        <p className="text-sm whitespace-pre-wrap">{viewingNPCFull.apariencia}</p>
+                      </section>
+                    )}
+                    {viewingNPCFull.personalidad && (
+                      <section>
+                        <h3 className="font-semibold text-lg mb-1">Personalidad</h3>
+                        <p className="text-sm whitespace-pre-wrap">{viewingNPCFull.personalidad}</p>
+                      </section>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Información ampliada visible solo para el Máster.</p>
+                )}
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -483,18 +654,18 @@ export default function Characters() {
             <Users className="w-4 h-4" /><span>NPCs ({filteredNPCs.length})</span>
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="characters">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCharacters.map((character) => (
-              <Card key={character.id} className="hover:shadow-lg transition-shadow">
+              <Card key={character.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openCharacterDetail(character)}>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{character.name}</span>
                     {isMaster && (
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="sm" onClick={() => openEditCharacter(character)}><Edit className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCharacter(character)}><Trash2 className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCharacter(character.id)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     )}
                   </CardTitle>
@@ -508,25 +679,30 @@ export default function Characters() {
                     <p><span className="font-medium">Edad:</span> {character.Edad}</p>
                     <p><span className="font-medium">Organización:</span> {character.Organización}</p>
                     <p><span className="font-medium">Estado:</span> {character.Estado}</p>
-                    {character.description && <p className="text-muted-foreground italic mt-2">{character.description}</p>}
+                    {isMaster && character.user_id && (
+                      <p className="text-xs text-muted-foreground">Jugador: {profileLabel(character.user_id)}</p>
+                    )}
+                    {!isMaster && character.user_id === user?.id && (
+                      <p className="text-xs text-primary">Tu personaje</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
-        
+
         <TabsContent value="npcs">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredNPCs.map((npc) => (
-              <Card key={npc.id} className="hover:shadow-lg transition-shadow">
+              <Card key={npc.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openNPCDetail(npc)}>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{npc.name}</span>
                     {isMaster && (
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="sm" onClick={() => openEditNPC(npc)}><Edit className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteNPC(npc)}><Trash2 className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteNPC(npc.id)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     )}
                   </CardTitle>
@@ -541,7 +717,6 @@ export default function Characters() {
                     <p><span className="font-medium">Organización:</span> {npc.Organización}</p>
                     <p><span className="font-medium">Alignment:</span> {npc.alignment}</p>
                     <p><span className="font-medium">Estado:</span> {npc.Estado}</p>
-                    {npc.description && <p className="text-muted-foreground italic mt-2">{npc.description}</p>}
                   </div>
                 </CardContent>
               </Card>
