@@ -2,7 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Home, Users, Sword, ImageIcon, Music, BookOpen, Sparkles, Menu, X, Settings, ScrollText } from 'lucide-react';
+import { LogOut, Home, Users, Sword, ImageIcon, Music, BookOpen, Sparkles, Menu, X, Settings, ScrollText, Swords } from 'lucide-react';
 import { D20Roller } from '@/components/D20Roller';
 import headerBg from '@/assets/header-bg.jpg';
 import {
