@@ -55,6 +55,9 @@ const App = () => (
               <Route path="/ficha" element={
                 <ProtectedRoute><Layout><Ficha /></Layout></ProtectedRoute>
               } />
+              <Route path="/combat" element={
+                <ProtectedRoute requireMaster={true}><Layout><Combat /></Layout></ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
