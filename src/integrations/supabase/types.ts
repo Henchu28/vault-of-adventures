@@ -458,6 +458,69 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_attacks: {
+        Row: {
+          created_at: string
+          formula: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          formula: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          formula?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_creatures: {
+        Row: {
+          ac: number
+          alignment: string
+          created_at: string
+          hp: number
+          id: string
+          initiative_formula: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ac?: number
+          alignment?: string
+          created_at?: string
+          hp?: number
+          id?: string
+          initiative_formula?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ac?: number
+          alignment?: string
+          created_at?: string
+          hp?: number
+          id?: string
+          initiative_formula?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       songs: {
         Row: {
           file: string | null
