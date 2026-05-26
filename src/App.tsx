@@ -16,6 +16,7 @@ import Music from "./pages/Music";
 import Notes from "./pages/Notes";
 import Settings from "./pages/Settings";
 import Ficha from "./pages/Ficha";
+import Combat from "./pages/Combat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
