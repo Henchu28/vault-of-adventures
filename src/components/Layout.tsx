@@ -31,6 +31,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/music', label: 'Music', icon: Music, show: true },
     { path: '/notes', label: 'Notes', icon: BookOpen, show: isMaster },
     { path: '/ficha', label: 'Ficha', icon: ScrollText, show: true },
+    { path: '/combat', label: 'Combat', icon: Swords, show: isMaster },
     { path: '/settings', label: 'Settings', icon: Settings, show: true },
   ];
 
