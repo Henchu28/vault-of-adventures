@@ -462,6 +462,16 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                 <div className="text-sm font-medium truncate flex items-center gap-1"><Users className="w-3 h-3" /> {g.name}</div>
                 <div className="text-xs text-muted-foreground truncate">{g.members.map(m => m.name).join(', ') || 'Vacío'}</div>
               </button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                setEditingGroupId(g.id);
+                setEditGroupName(g.name);
+                const picks: Record<string, boolean> = {};
+                for (const m of g.members) picks[m.id] = true;
+                setEditGroupPicks(picks);
+                setEditGroupOpen(true);
+              }}>
+                <Pencil className="w-3.5 h-3.5" />
+              </Button>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onDeleteGroup(g.id)}>
                 <Trash2 className="w-3.5 h-3.5" />
               </Button>
