@@ -335,13 +335,14 @@ type Combatant = {
   initBreakdown?: string;
 };
 
-function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreature, onCreateGroup, onDeleteGroup }: {
+function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreature, onCreateGroup, onDeleteGroup, onUpdateGroup }: {
   savedCreatures: SavedCreature[];
   groups: CreatureGroup[];
   onSaveCreature: (c: { name: string; hp: number; ac: number; initiative_formula: string; alignment: string }) => void;
   onDeleteCreature: (id: string) => void;
   onCreateGroup: (name: string, creatureIds: string[]) => void;
   onDeleteGroup: (id: string) => void;
+  onUpdateGroup: (id: string, name: string, creatureIds: string[]) => void;
 }) {
   const [combatants, setCombatants] = useState<Combatant[]>([]);
   const [turnIdx, setTurnIdx] = useState(0);
