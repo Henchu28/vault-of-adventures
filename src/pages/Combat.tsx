@@ -13,7 +13,11 @@ import {
 } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, BookmarkPlus, Menu, Dice6 } from 'lucide-react';
+import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, BookmarkPlus, Menu, Dice6, Users, FolderPlus } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+
+type SavedCreature = { id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string };
+type CreatureGroup = { id: string; name: string; members: SavedCreature[] };
 
 // ---------- Dice / formula engine ----------
 type Roll = { sides: number; value: number };
@@ -331,16 +335,22 @@ type Combatant = {
   initBreakdown?: string;
 };
 
-function CombatTracker({ savedCreatures, onSaveCreature, onDeleteCreature }: {
-  savedCreatures: { id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string }[];
+function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreature, onCreateGroup, onDeleteGroup }: {
+  savedCreatures: SavedCreature[];
+  groups: CreatureGroup[];
   onSaveCreature: (c: { name: string; hp: number; ac: number; initiative_formula: string; alignment: string }) => void;
   onDeleteCreature: (id: string) => void;
+  onCreateGroup: (name: string, creatureIds: string[]) => void;
+  onDeleteGroup: (id: string) => void;
 }) {
   const [combatants, setCombatants] = useState<Combatant[]>([]);
   const [turnIdx, setTurnIdx] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
   const [hpOpen, setHpOpen] = useState<string | null>(null);
   const [hpSign, setHpSign] = useState<1 | -1>(-1);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [groupPicks, setGroupPicks] = useState<Record<string, boolean>>({});
 
   const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, init: '1d20', alignment: 'enemy' as 'enemy' | 'friend', save: false });
 
@@ -369,13 +379,36 @@ function CombatTracker({ savedCreatures, onSaveCreature, onDeleteCreature }: {
     setAddOpen(false);
   };
 
-  const addFromSaved = (s: typeof savedCreatures[number]) => {
-    const sameName = combatants.filter((c) => c.name === s.name || c.name.startsWith(s.name + ' '));
-    const finalName = sameName.length === 0 ? s.name : `${s.name} ${sameName.length + 1}`;
-    addCombatant({
-      name: finalName, hp: s.hp, ac: s.ac,
-      initFormula: s.initiative_formula,
-      alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+  const buildUniqueName = (existing: { name: string }[], baseName: string) => {
+    const sameName = existing.filter((c) => c.name === baseName || c.name.startsWith(baseName + ' '));
+    return sameName.length === 0 ? baseName : `${baseName} ${sameName.length + 1}`;
+  };
+
+  const addFromSaved = (s: SavedCreature) => {
+    setCombatants((cs) => {
+      const finalName = buildUniqueName(cs, s.name);
+      return [...cs, {
+        id: crypto.randomUUID(), name: finalName, hp: s.hp, maxHp: s.hp, ac: s.ac,
+        initFormula: s.initiative_formula,
+        alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+        initRoll: null,
+      }];
+    });
+  };
+
+  const addGroup = (g: CreatureGroup) => {
+    setCombatants((cs) => {
+      const next = [...cs];
+      for (const s of g.members) {
+        const finalName = buildUniqueName(next, s.name);
+        next.push({
+          id: crypto.randomUUID(), name: finalName, hp: s.hp, maxHp: s.hp, ac: s.ac,
+          initFormula: s.initiative_formula,
+          alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+          initRoll: null,
+        });
+      }
+      return next;
     });
   };
 
@@ -408,21 +441,45 @@ function CombatTracker({ savedCreatures, onSaveCreature, onDeleteCreature }: {
   const activeHpCombatant = combatants.find((c) => c.id === hpOpen) ?? null;
 
   const SavedCreaturesList = (
-    <div className="space-y-2">
-      <h3 className="font-semibold text-sm flex items-center gap-2"><Save className="w-4 h-4" /> Criaturas guardadas</h3>
-      {savedCreatures.length === 0 && <p className="text-xs text-muted-foreground">Sin criaturas guardadas.</p>}
-      <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
-        {savedCreatures.map((s) => (
-          <div key={s.id} className="flex items-center gap-1 p-2 rounded border border-border bg-card hover:bg-muted/40">
-            <button className="flex-1 text-left" onClick={() => addFromSaved(s)}>
-              <div className="text-sm font-medium truncate">{s.name}</div>
-              <div className="text-xs text-muted-foreground">HP {s.hp} · AC {s.ac} · {s.initiative_formula}</div>
-            </button>
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onDeleteCreature(s.id)}>
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        ))}
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-sm flex items-center gap-2"><Users className="w-4 h-4" /> Grupos</h3>
+          <Button size="sm" variant="ghost" className="h-7 gap-1 px-2" onClick={() => { setGroupPicks({}); setGroupName(''); setGroupOpen(true); }} disabled={savedCreatures.length === 0}>
+            <FolderPlus className="w-3.5 h-3.5" /> Nuevo
+          </Button>
+        </div>
+        {groups.length === 0 && <p className="text-xs text-muted-foreground">Sin grupos.</p>}
+        <div className="space-y-1 max-h-[30vh] overflow-y-auto pr-1">
+          {groups.map((g) => (
+            <div key={g.id} className="flex items-center gap-1 p-2 rounded border border-border bg-card hover:bg-muted/40">
+              <button className="flex-1 text-left" onClick={() => addGroup(g)}>
+                <div className="text-sm font-medium truncate flex items-center gap-1"><Users className="w-3 h-3" /> {g.name}</div>
+                <div className="text-xs text-muted-foreground truncate">{g.members.map(m => m.name).join(', ') || 'Vacío'}</div>
+              </button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onDeleteGroup(g.id)}>
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <h3 className="font-semibold text-sm flex items-center gap-2"><Save className="w-4 h-4" /> Criaturas guardadas</h3>
+        {savedCreatures.length === 0 && <p className="text-xs text-muted-foreground">Sin criaturas guardadas.</p>}
+        <div className="space-y-1 max-h-[50vh] overflow-y-auto pr-1">
+          {savedCreatures.map((s) => (
+            <div key={s.id} className="flex items-center gap-1 p-2 rounded border border-border bg-card hover:bg-muted/40">
+              <button className="flex-1 text-left" onClick={() => addFromSaved(s)}>
+                <div className="text-sm font-medium truncate">{s.name}</div>
+                <div className="text-xs text-muted-foreground">HP {s.hp} · AC {s.ac} · {s.initiative_formula}</div>
+              </button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onDeleteCreature(s.id)}>
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -605,6 +662,43 @@ function CombatTracker({ savedCreatures, onSaveCreature, onDeleteCreature }: {
             )}
           </DialogContent>
         </Dialog>
+
+        <Dialog open={groupOpen} onOpenChange={setGroupOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Nuevo grupo</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Nombre del grupo</Label>
+                <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Ej: Personajes Campaña Azur" />
+              </div>
+              <div>
+                <Label>Criaturas incluidas</Label>
+                <div className="mt-2 max-h-64 overflow-y-auto space-y-1 border border-border rounded p-2">
+                  {savedCreatures.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40 cursor-pointer">
+                      <Checkbox
+                        checked={!!groupPicks[s.id]}
+                        onCheckedChange={(v) => setGroupPicks((p) => ({ ...p, [s.id]: !!v }))}
+                      />
+                      <span className="truncate">{s.name}</span>
+                      <span className="ml-auto text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  const ids = Object.keys(groupPicks).filter((k) => groupPicks[k]);
+                  if (!groupName.trim() || ids.length === 0) return;
+                  onCreateGroup(groupName.trim(), ids);
+                  setGroupOpen(false);
+                }}
+              >Crear</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
@@ -615,18 +709,34 @@ export default function Combat() {
   const { user, isMaster, loading } = useAuth();
   const { toast } = useToast();
   const [savedAttacks, setSavedAttacks] = useState<{ id: string; name: string; formula: string }[]>([]);
-  const [savedCreatures, setSavedCreatures] = useState<{ id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string }[]>([]);
+  const [savedCreatures, setSavedCreatures] = useState<SavedCreature[]>([]);
+  const [groups, setGroups] = useState<CreatureGroup[]>([]);
 
   const sb = supabase as any;
 
   const loadAll = async () => {
     if (!user) return;
-    const [a, c] = await Promise.all([
+    const [a, c, g, gm] = await Promise.all([
       sb.from('saved_attacks').select('*').order('name'),
       sb.from('saved_creatures').select('*').order('name'),
+      sb.from('saved_creature_groups').select('*').order('name'),
+      sb.from('saved_creature_group_members').select('*').order('position'),
     ]);
     if (!a.error) setSavedAttacks(a.data || []);
-    if (!c.error) setSavedCreatures(c.data || []);
+    const creatures: SavedCreature[] = !c.error ? (c.data || []) : [];
+    setSavedCreatures(creatures);
+    if (!g.error && !gm.error) {
+      const byId = new Map(creatures.map((x) => [x.id, x]));
+      const grouped: CreatureGroup[] = (g.data || []).map((gr: any) => ({
+        id: gr.id,
+        name: gr.name,
+        members: (gm.data || [])
+          .filter((m: any) => m.group_id === gr.id)
+          .map((m: any) => byId.get(m.creature_id))
+          .filter(Boolean) as SavedCreature[],
+      }));
+      setGroups(grouped);
+    }
   };
 
   useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [user?.id]);
@@ -652,6 +762,20 @@ export default function Combat() {
     await sb.from('saved_creatures').delete().eq('id', id);
     loadAll();
   };
+  const createGroup = async (name: string, creatureIds: string[]) => {
+    const { data, error } = await sb.from('saved_creature_groups').insert({ user_id: user!.id, name }).select().single();
+    if (error || !data) { toast({ title: 'Error', description: error?.message, variant: 'destructive' }); return; }
+    const rows = creatureIds.map((cid, i) => ({ group_id: data.id, creature_id: cid, position: i }));
+    if (rows.length) {
+      const { error: e2 } = await sb.from('saved_creature_group_members').insert(rows);
+      if (e2) toast({ title: 'Error', description: e2.message, variant: 'destructive' });
+    }
+    loadAll();
+  };
+  const deleteGroup = async (id: string) => {
+    await sb.from('saved_creature_groups').delete().eq('id', id);
+    loadAll();
+  };
 
   return (
     <div className="space-y-4">
@@ -665,8 +789,11 @@ export default function Combat() {
         />
         <CombatTracker
           savedCreatures={savedCreatures}
+          groups={groups}
           onSaveCreature={saveCreature}
           onDeleteCreature={deleteCreature}
+          onCreateGroup={createGroup}
+          onDeleteGroup={deleteGroup}
         />
       </div>
     </div>

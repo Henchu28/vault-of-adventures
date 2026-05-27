@@ -485,6 +485,69 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_creature_group_members: {
+        Row: {
+          created_at: string
+          creature_id: string
+          group_id: string
+          id: string
+          position: number
+        }
+        Insert: {
+          created_at?: string
+          creature_id: string
+          group_id: string
+          id?: string
+          position?: number
+        }
+        Update: {
+          created_at?: string
+          creature_id?: string
+          group_id?: string
+          id?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_creature_group_members_creature_id_fkey"
+            columns: ["creature_id"]
+            isOneToOne: false
+            referencedRelation: "saved_creatures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_creature_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "saved_creature_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_creature_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_creatures: {
         Row: {
           ac: number
