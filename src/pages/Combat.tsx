@@ -662,6 +662,43 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
             )}
           </DialogContent>
         </Dialog>
+
+        <Dialog open={groupOpen} onOpenChange={setGroupOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Nuevo grupo</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Nombre del grupo</Label>
+                <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Ej: Personajes Campaña Azur" />
+              </div>
+              <div>
+                <Label>Criaturas incluidas</Label>
+                <div className="mt-2 max-h-64 overflow-y-auto space-y-1 border border-border rounded p-2">
+                  {savedCreatures.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40 cursor-pointer">
+                      <Checkbox
+                        checked={!!groupPicks[s.id]}
+                        onCheckedChange={(v) => setGroupPicks((p) => ({ ...p, [s.id]: !!v }))}
+                      />
+                      <span className="truncate">{s.name}</span>
+                      <span className="ml-auto text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  const ids = Object.keys(groupPicks).filter((k) => groupPicks[k]);
+                  if (!groupName.trim() || ids.length === 0) return;
+                  onCreateGroup(groupName.trim(), ids);
+                  setGroupOpen(false);
+                }}
+              >Crear</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
