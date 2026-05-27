@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, BookmarkPlus, Menu, Dice6, Users, FolderPlus } from 'lucide-react';
+import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, BookmarkPlus, Menu, Dice6, Users, FolderPlus, Pencil } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 
 type SavedCreature = { id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string };
@@ -335,13 +335,14 @@ type Combatant = {
   initBreakdown?: string;
 };
 
-function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreature, onCreateGroup, onDeleteGroup }: {
+function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreature, onCreateGroup, onDeleteGroup, onUpdateGroup }: {
   savedCreatures: SavedCreature[];
   groups: CreatureGroup[];
   onSaveCreature: (c: { name: string; hp: number; ac: number; initiative_formula: string; alignment: string }) => void;
   onDeleteCreature: (id: string) => void;
   onCreateGroup: (name: string, creatureIds: string[]) => void;
   onDeleteGroup: (id: string) => void;
+  onUpdateGroup: (id: string, name: string, creatureIds: string[]) => void;
 }) {
   const [combatants, setCombatants] = useState<Combatant[]>([]);
   const [turnIdx, setTurnIdx] = useState(0);
@@ -351,6 +352,10 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupPicks, setGroupPicks] = useState<Record<string, boolean>>({});
+  const [editGroupOpen, setEditGroupOpen] = useState(false);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editGroupName, setEditGroupName] = useState('');
+  const [editGroupPicks, setEditGroupPicks] = useState<Record<string, boolean>>({});
 
   const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, init: '1d20', alignment: 'enemy' as 'enemy' | 'friend', save: false });
 
@@ -457,6 +462,16 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                 <div className="text-sm font-medium truncate flex items-center gap-1"><Users className="w-3 h-3" /> {g.name}</div>
                 <div className="text-xs text-muted-foreground truncate">{g.members.map(m => m.name).join(', ') || 'Vacío'}</div>
               </button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                setEditingGroupId(g.id);
+                setEditGroupName(g.name);
+                const picks: Record<string, boolean> = {};
+                for (const m of g.members) picks[m.id] = true;
+                setEditGroupPicks(picks);
+                setEditGroupOpen(true);
+              }}>
+                <Pencil className="w-3.5 h-3.5" />
+              </Button>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onDeleteGroup(g.id)}>
                 <Trash2 className="w-3.5 h-3.5" />
               </Button>
@@ -699,6 +714,43 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={editGroupOpen} onOpenChange={(o) => { if (!o) setEditGroupOpen(false); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Editar grupo</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Nombre del grupo</Label>
+                <Input value={editGroupName} onChange={(e) => setEditGroupName(e.target.value)} placeholder="Ej: Personajes Campaña Azur" />
+              </div>
+              <div>
+                <Label>Criaturas incluidas</Label>
+                <div className="mt-2 max-h-64 overflow-y-auto space-y-1 border border-border rounded p-2">
+                  {savedCreatures.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40 cursor-pointer">
+                      <Checkbox
+                        checked={!!editGroupPicks[s.id]}
+                        onCheckedChange={(v) => setEditGroupPicks((p) => ({ ...p, [s.id]: !!v }))}
+                      />
+                      <span className="truncate">{s.name}</span>
+                      <span className="ml-auto text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  const ids = Object.keys(editGroupPicks).filter((k) => editGroupPicks[k]);
+                  if (!editGroupName.trim() || ids.length === 0 || !editingGroupId) return;
+                  onUpdateGroup(editingGroupId, editGroupName.trim(), ids);
+                  setEditGroupOpen(false);
+                }}
+              >Guardar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
@@ -776,6 +828,17 @@ export default function Combat() {
     await sb.from('saved_creature_groups').delete().eq('id', id);
     loadAll();
   };
+  const updateGroup = async (id: string, name: string, creatureIds: string[]) => {
+    const { error } = await sb.from('saved_creature_groups').update({ name }).eq('id', id);
+    if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
+    await sb.from('saved_creature_group_members').delete().eq('group_id', id);
+    const rows = creatureIds.map((cid, i) => ({ group_id: id, creature_id: cid, position: i }));
+    if (rows.length) {
+      const { error: e2 } = await sb.from('saved_creature_group_members').insert(rows);
+      if (e2) toast({ title: 'Error', description: e2.message, variant: 'destructive' });
+    }
+    loadAll();
+  };
 
   return (
     <div className="space-y-4">
@@ -794,6 +857,7 @@ export default function Combat() {
           onDeleteCreature={deleteCreature}
           onCreateGroup={createGroup}
           onDeleteGroup={deleteGroup}
+          onUpdateGroup={updateGroup}
         />
       </div>
     </div>
