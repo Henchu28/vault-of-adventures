@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, BookmarkPlus, Menu, Dice6, Users, FolderPlus } from 'lucide-react';
+import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, BookmarkPlus, Menu, Dice6, Users, FolderPlus, Pencil } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 
 type SavedCreature = { id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string };
