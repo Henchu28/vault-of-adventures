@@ -352,6 +352,10 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupPicks, setGroupPicks] = useState<Record<string, boolean>>({});
+  const [editGroupOpen, setEditGroupOpen] = useState(false);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editGroupName, setEditGroupName] = useState('');
+  const [editGroupPicks, setEditGroupPicks] = useState<Record<string, boolean>>({});
 
   const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, init: '1d20', alignment: 'enemy' as 'enemy' | 'friend', save: false });
 
