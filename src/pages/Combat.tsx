@@ -828,6 +828,17 @@ export default function Combat() {
     await sb.from('saved_creature_groups').delete().eq('id', id);
     loadAll();
   };
+  const updateGroup = async (id: string, name: string, creatureIds: string[]) => {
+    const { error } = await sb.from('saved_creature_groups').update({ name }).eq('id', id);
+    if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
+    await sb.from('saved_creature_group_members').delete().eq('group_id', id);
+    const rows = creatureIds.map((cid, i) => ({ group_id: id, creature_id: cid, position: i }));
+    if (rows.length) {
+      const { error: e2 } = await sb.from('saved_creature_group_members').insert(rows);
+      if (e2) toast({ title: 'Error', description: e2.message, variant: 'destructive' });
+    }
+    loadAll();
+  };
 
   return (
     <div className="space-y-4">
