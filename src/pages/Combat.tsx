@@ -335,16 +335,22 @@ type Combatant = {
   initBreakdown?: string;
 };
 
-function CombatTracker({ savedCreatures, onSaveCreature, onDeleteCreature }: {
-  savedCreatures: { id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string }[];
+function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreature, onCreateGroup, onDeleteGroup }: {
+  savedCreatures: SavedCreature[];
+  groups: CreatureGroup[];
   onSaveCreature: (c: { name: string; hp: number; ac: number; initiative_formula: string; alignment: string }) => void;
   onDeleteCreature: (id: string) => void;
+  onCreateGroup: (name: string, creatureIds: string[]) => void;
+  onDeleteGroup: (id: string) => void;
 }) {
   const [combatants, setCombatants] = useState<Combatant[]>([]);
   const [turnIdx, setTurnIdx] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
   const [hpOpen, setHpOpen] = useState<string | null>(null);
   const [hpSign, setHpSign] = useState<1 | -1>(-1);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [groupPicks, setGroupPicks] = useState<Record<string, boolean>>({});
 
   const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, init: '1d20', alignment: 'enemy' as 'enemy' | 'friend', save: false });
 
@@ -373,13 +379,36 @@ function CombatTracker({ savedCreatures, onSaveCreature, onDeleteCreature }: {
     setAddOpen(false);
   };
 
-  const addFromSaved = (s: typeof savedCreatures[number]) => {
-    const sameName = combatants.filter((c) => c.name === s.name || c.name.startsWith(s.name + ' '));
-    const finalName = sameName.length === 0 ? s.name : `${s.name} ${sameName.length + 1}`;
-    addCombatant({
-      name: finalName, hp: s.hp, ac: s.ac,
-      initFormula: s.initiative_formula,
-      alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+  const buildUniqueName = (existing: { name: string }[], baseName: string) => {
+    const sameName = existing.filter((c) => c.name === baseName || c.name.startsWith(baseName + ' '));
+    return sameName.length === 0 ? baseName : `${baseName} ${sameName.length + 1}`;
+  };
+
+  const addFromSaved = (s: SavedCreature) => {
+    setCombatants((cs) => {
+      const finalName = buildUniqueName(cs, s.name);
+      return [...cs, {
+        id: crypto.randomUUID(), name: finalName, hp: s.hp, maxHp: s.hp, ac: s.ac,
+        initFormula: s.initiative_formula,
+        alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+        initRoll: null,
+      }];
+    });
+  };
+
+  const addGroup = (g: CreatureGroup) => {
+    setCombatants((cs) => {
+      const next = [...cs];
+      for (const s of g.members) {
+        const finalName = buildUniqueName(next, s.name);
+        next.push({
+          id: crypto.randomUUID(), name: finalName, hp: s.hp, maxHp: s.hp, ac: s.ac,
+          initFormula: s.initiative_formula,
+          alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+          initRoll: null,
+        });
+      }
+      return next;
     });
   };
 
