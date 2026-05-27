@@ -857,6 +857,7 @@ export default function Combat() {
           onDeleteCreature={deleteCreature}
           onCreateGroup={createGroup}
           onDeleteGroup={deleteGroup}
+          onUpdateGroup={updateGroup}
         />
       </div>
     </div>
