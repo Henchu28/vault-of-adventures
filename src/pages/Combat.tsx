@@ -709,18 +709,34 @@ export default function Combat() {
   const { user, isMaster, loading } = useAuth();
   const { toast } = useToast();
   const [savedAttacks, setSavedAttacks] = useState<{ id: string; name: string; formula: string }[]>([]);
-  const [savedCreatures, setSavedCreatures] = useState<{ id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string }[]>([]);
+  const [savedCreatures, setSavedCreatures] = useState<SavedCreature[]>([]);
+  const [groups, setGroups] = useState<CreatureGroup[]>([]);
 
   const sb = supabase as any;
 
   const loadAll = async () => {
     if (!user) return;
-    const [a, c] = await Promise.all([
+    const [a, c, g, gm] = await Promise.all([
       sb.from('saved_attacks').select('*').order('name'),
       sb.from('saved_creatures').select('*').order('name'),
+      sb.from('saved_creature_groups').select('*').order('name'),
+      sb.from('saved_creature_group_members').select('*').order('position'),
     ]);
     if (!a.error) setSavedAttacks(a.data || []);
-    if (!c.error) setSavedCreatures(c.data || []);
+    const creatures: SavedCreature[] = !c.error ? (c.data || []) : [];
+    setSavedCreatures(creatures);
+    if (!g.error && !gm.error) {
+      const byId = new Map(creatures.map((x) => [x.id, x]));
+      const grouped: CreatureGroup[] = (g.data || []).map((gr: any) => ({
+        id: gr.id,
+        name: gr.name,
+        members: (gm.data || [])
+          .filter((m: any) => m.group_id === gr.id)
+          .map((m: any) => byId.get(m.creature_id))
+          .filter(Boolean) as SavedCreature[],
+      }));
+      setGroups(grouped);
+    }
   };
 
   useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [user?.id]);
@@ -746,6 +762,20 @@ export default function Combat() {
     await sb.from('saved_creatures').delete().eq('id', id);
     loadAll();
   };
+  const createGroup = async (name: string, creatureIds: string[]) => {
+    const { data, error } = await sb.from('saved_creature_groups').insert({ user_id: user!.id, name }).select().single();
+    if (error || !data) { toast({ title: 'Error', description: error?.message, variant: 'destructive' }); return; }
+    const rows = creatureIds.map((cid, i) => ({ group_id: data.id, creature_id: cid, position: i }));
+    if (rows.length) {
+      const { error: e2 } = await sb.from('saved_creature_group_members').insert(rows);
+      if (e2) toast({ title: 'Error', description: e2.message, variant: 'destructive' });
+    }
+    loadAll();
+  };
+  const deleteGroup = async (id: string) => {
+    await sb.from('saved_creature_groups').delete().eq('id', id);
+    loadAll();
+  };
 
   return (
     <div className="space-y-4">
@@ -759,8 +789,11 @@ export default function Combat() {
         />
         <CombatTracker
           savedCreatures={savedCreatures}
+          groups={groups}
           onSaveCreature={saveCreature}
           onDeleteCreature={deleteCreature}
+          onCreateGroup={createGroup}
+          onDeleteGroup={deleteGroup}
         />
       </div>
     </div>
