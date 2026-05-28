@@ -645,7 +645,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
               {ordered.map((c, i) => {
                 const isTurn = i === turnIdx && c.initRoll !== null;
                 const borderWidth = isTurn ? 'border-l-8 border-r-8' : 'border-l-4 border-r-4';
-                const color = c.alignment === 'friend' ? 'border-l-green-500 border-r-green-500' : 'border-l-red-500 border-r-red-500';
+                const color = ALIGNMENT_BORDER[c.alignment];
                 return (
                   <div
                     key={c.id}
