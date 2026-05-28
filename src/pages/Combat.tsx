@@ -383,9 +383,16 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
   const [editGroupName, setEditGroupName] = useState('');
   const [editGroupPicks, setEditGroupPicks] = useState<Record<string, boolean>>({});
 
-  const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, init: '1d20', alignment: 'enemy' as 'enemy' | 'friend', save: false });
+  const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, initBonus: 0, alignment: 'monster' as Alignment, save: false });
+  const [round, setRound] = useState(1);
 
   const ordered = combatants;
+
+  const buildInitFormula = (bonus: number) => {
+    if (bonus > 0) return `1d20+${bonus}`;
+    if (bonus < 0) return `1d20${bonus}`;
+    return '1d20';
+  };
 
   const addCombatant = (c: Omit<Combatant, 'id' | 'initRoll' | 'maxHp'> & { hp: number }) => {
     setCombatants((cs) => [...cs, { ...c, id: crypto.randomUUID(), initRoll: null, maxHp: c.hp }]);
@@ -393,20 +400,21 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
 
   const submitDraft = () => {
     if (!draft.name.trim()) return;
+    const init = buildInitFormula(draft.initBonus);
     addCombatant({
       name: draft.name.trim(),
       hp: draft.hp,
       ac: draft.ac,
-      initFormula: draft.init,
+      initFormula: init,
       alignment: draft.alignment,
     });
     if (draft.save) {
       onSaveCreature({
         name: draft.name.trim(), hp: draft.hp, ac: draft.ac,
-        initiative_formula: draft.init, alignment: draft.alignment,
+        initiative_formula: init, alignment: draft.alignment,
       });
     }
-    setDraft({ name: '', hp: 10, ac: 10, init: '1d20', alignment: 'enemy', save: false });
+    setDraft({ name: '', hp: 10, ac: 10, initBonus: 0, alignment: 'monster', save: false });
     setAddOpen(false);
   };
 
@@ -421,7 +429,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
       return [...cs, {
         id: crypto.randomUUID(), name: finalName, hp: s.hp, maxHp: s.hp, ac: s.ac,
         initFormula: s.initiative_formula,
-        alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+        alignment: normalizeAlignment(s.alignment),
         initRoll: null,
       }];
     });
@@ -429,13 +437,13 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
 
   const addGroup = (g: CreatureGroup) => {
     setCombatants((cs) => {
-      const next = [...cs];
+      const next: Combatant[] = [...cs];
       for (const s of g.members) {
         const finalName = buildUniqueName(next, s.name);
         next.push({
           id: crypto.randomUUID(), name: finalName, hp: s.hp, maxHp: s.hp, ac: s.ac,
           initFormula: s.initiative_formula,
-          alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+          alignment: normalizeAlignment(s.alignment),
           initRoll: null,
         });
       }
