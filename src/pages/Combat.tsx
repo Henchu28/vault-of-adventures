@@ -15,6 +15,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, BookmarkPlus, Menu, Dice6, Users, FolderPlus, Pencil } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
+
+type Alignment = 'player' | 'monster' | 'npc' | 'structure' | 'other';
+
+const ALIGNMENT_LABELS: Record<Alignment, string> = {
+  player: 'Jugador',
+  monster: 'Monstruo',
+  npc: 'NPC',
+  structure: 'Estructura/Objeto',
+  other: 'Otro',
+};
+
+const ALIGNMENT_BORDER: Record<Alignment, string> = {
+  player: 'border-l-green-500 border-r-green-500',
+  monster: 'border-l-red-500 border-r-red-500',
+  npc: 'border-l-yellow-500 border-r-yellow-500',
+  structure: 'border-l-blue-500 border-r-blue-500',
+  other: 'border-l-muted-foreground border-r-muted-foreground',
+};
+
+const normalizeAlignment = (a: string | null | undefined): Alignment => {
+  if (a === 'friend') return 'player';
+  if (a === 'enemy') return 'monster';
+  if (a === 'player' || a === 'monster' || a === 'npc' || a === 'structure' || a === 'other') return a;
+  return 'other';
+};
 
 type SavedCreature = { id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string };
 type CreatureGroup = { id: string; name: string; members: SavedCreature[] };
@@ -330,7 +356,7 @@ type Combatant = {
   maxHp: number;
   ac: number;
   initFormula: string;
-  alignment: 'friend' | 'enemy';
+  alignment: Alignment;
   initRoll: number | null;
   initBreakdown?: string;
 };
@@ -357,9 +383,16 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
   const [editGroupName, setEditGroupName] = useState('');
   const [editGroupPicks, setEditGroupPicks] = useState<Record<string, boolean>>({});
 
-  const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, init: '1d20', alignment: 'enemy' as 'enemy' | 'friend', save: false });
+  const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, initBonus: 0, alignment: 'monster' as Alignment, save: false });
+  const [round, setRound] = useState(1);
 
   const ordered = combatants;
+
+  const buildInitFormula = (bonus: number) => {
+    if (bonus > 0) return `1d20+${bonus}`;
+    if (bonus < 0) return `1d20${bonus}`;
+    return '1d20';
+  };
 
   const addCombatant = (c: Omit<Combatant, 'id' | 'initRoll' | 'maxHp'> & { hp: number }) => {
     setCombatants((cs) => [...cs, { ...c, id: crypto.randomUUID(), initRoll: null, maxHp: c.hp }]);
@@ -367,20 +400,21 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
 
   const submitDraft = () => {
     if (!draft.name.trim()) return;
+    const init = buildInitFormula(draft.initBonus);
     addCombatant({
       name: draft.name.trim(),
       hp: draft.hp,
       ac: draft.ac,
-      initFormula: draft.init,
+      initFormula: init,
       alignment: draft.alignment,
     });
     if (draft.save) {
       onSaveCreature({
         name: draft.name.trim(), hp: draft.hp, ac: draft.ac,
-        initiative_formula: draft.init, alignment: draft.alignment,
+        initiative_formula: init, alignment: draft.alignment,
       });
     }
-    setDraft({ name: '', hp: 10, ac: 10, init: '1d20', alignment: 'enemy', save: false });
+    setDraft({ name: '', hp: 10, ac: 10, initBonus: 0, alignment: 'monster', save: false });
     setAddOpen(false);
   };
 
@@ -395,7 +429,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
       return [...cs, {
         id: crypto.randomUUID(), name: finalName, hp: s.hp, maxHp: s.hp, ac: s.ac,
         initFormula: s.initiative_formula,
-        alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+        alignment: normalizeAlignment(s.alignment),
         initRoll: null,
       }];
     });
@@ -403,13 +437,13 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
 
   const addGroup = (g: CreatureGroup) => {
     setCombatants((cs) => {
-      const next = [...cs];
+      const next: Combatant[] = [...cs];
       for (const s of g.members) {
         const finalName = buildUniqueName(next, s.name);
         next.push({
           id: crypto.randomUUID(), name: finalName, hp: s.hp, maxHp: s.hp, ac: s.ac,
           initFormula: s.initiative_formula,
-          alignment: (s.alignment === 'friend' ? 'friend' : 'enemy'),
+          alignment: normalizeAlignment(s.alignment),
           initRoll: null,
         });
       }
@@ -429,6 +463,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
     rolled.sort((a, b) => (b.initRoll ?? 0) - (a.initRoll ?? 0));
     setCombatants(rolled);
     setTurnIdx(0);
+    setRound(1);
   };
 
   const adjustHp = (id: string, delta: number) => {
@@ -439,8 +474,23 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
     setCombatants((cs) => cs.filter((c) => c.id !== id));
   };
 
-  const nextTurn = () => setTurnIdx((i) => (combatants.length ? (i + 1) % combatants.length : 0));
-  const prevTurn = () => setTurnIdx((i) => (combatants.length ? (i - 1 + combatants.length) % combatants.length : 0));
+  const combatStarted = combatants.length > 0 && combatants.every((c) => c.initRoll !== null);
+
+  const nextTurn = () => {
+    if (!combatants.length) return;
+    setTurnIdx((i) => {
+      const next = (i + 1) % combatants.length;
+      if (combatStarted && next === 0) setRound((r) => r + 1);
+      return next;
+    });
+  };
+  const prevTurn = () => {
+    if (!combatants.length) return;
+    setTurnIdx((i) => {
+      if (combatStarted && i === 0) setRound((r) => Math.max(1, r - 1));
+      return (i - 1 + combatants.length) % combatants.length;
+    });
+  };
 
   const hpDeltas = [1, 2, 3, 5, 10];
   const activeHpCombatant = combatants.find((c) => c.id === hpOpen) ?? null;
@@ -529,26 +579,39 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                       <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
                     </div>
                     <div>
-                      <Label>Vida</Label>
-                      <Input type="number" value={draft.hp} onChange={(e) => setDraft({ ...draft, hp: parseInt(e.target.value) || 0 })} />
-                    </div>
-                    <div>
                       <Label>Armadura</Label>
                       <Input type="number" value={draft.ac} onChange={(e) => setDraft({ ...draft, ac: parseInt(e.target.value) || 0 })} />
                     </div>
                     <div>
-                      <Label>Iniciativa</Label>
-                      <Input value={draft.init} onChange={(e) => setDraft({ ...draft, init: e.target.value })} placeholder="1d20+3" />
+                      <Label>Vida</Label>
+                      <Input type="number" value={draft.hp} onChange={(e) => setDraft({ ...draft, hp: parseInt(e.target.value) || 0 })} />
                     </div>
-                    <div>
-                      <Label>Color</Label>
-                      <Select value={draft.alignment} onValueChange={(v) => setDraft({ ...draft, alignment: v as any })}>
+                    <div className="col-span-2">
+                      <Label>Tipo</Label>
+                      <Select value={draft.alignment} onValueChange={(v) => setDraft({ ...draft, alignment: v as Alignment })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="friend">Amigo (verde)</SelectItem>
-                          <SelectItem value="enemy">Enemigo (rojo)</SelectItem>
+                          <SelectItem value="player">Jugador (verde)</SelectItem>
+                          <SelectItem value="monster">Monstruo (rojo)</SelectItem>
+                          <SelectItem value="npc">NPC (amarillo)</SelectItem>
+                          <SelectItem value="structure">Estructura/Objeto (azul)</SelectItem>
+                          <SelectItem value="other">Otro</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Bonus de iniciativa</Label>
+                        <span className="text-sm font-mono">1d20{draft.initBonus > 0 ? `+${draft.initBonus}` : draft.initBonus < 0 ? draft.initBonus : ''}</span>
+                      </div>
+                      <Slider
+                        className="mt-3"
+                        min={-10}
+                        max={10}
+                        step={1}
+                        value={[draft.initBonus]}
+                        onValueChange={(v) => setDraft({ ...draft, initBonus: v[0] })}
+                      />
                     </div>
                     <label className="col-span-2 flex items-center gap-2 text-sm">
                       <input type="checkbox" checked={draft.save} onChange={(e) => setDraft({ ...draft, save: e.target.checked })} />
@@ -566,6 +629,11 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
               <Button size="sm" variant="secondary" onClick={rollAllInitiative} disabled={!combatants.length}>
                 Tirar iniciativa
               </Button>
+              {combatStarted && (
+                <div className="ml-auto px-3 py-1 rounded-md bg-primary/15 border border-primary/40 text-sm font-semibold">
+                  Ronda {round}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -577,7 +645,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
               {ordered.map((c, i) => {
                 const isTurn = i === turnIdx && c.initRoll !== null;
                 const borderWidth = isTurn ? 'border-l-8 border-r-8' : 'border-l-4 border-r-4';
-                const color = c.alignment === 'friend' ? 'border-l-green-500 border-r-green-500' : 'border-l-red-500 border-r-red-500';
+                const color = ALIGNMENT_BORDER[c.alignment];
                 return (
                   <div
                     key={c.id}
