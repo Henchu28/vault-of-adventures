@@ -356,7 +356,7 @@ type Combatant = {
   maxHp: number;
   ac: number;
   initFormula: string;
-  alignment: 'friend' | 'enemy';
+  alignment: Alignment;
   initRoll: number | null;
   initBreakdown?: string;
 };
