@@ -463,6 +463,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
     rolled.sort((a, b) => (b.initRoll ?? 0) - (a.initRoll ?? 0));
     setCombatants(rolled);
     setTurnIdx(0);
+    setRound(1);
   };
 
   const adjustHp = (id: string, delta: number) => {
@@ -473,8 +474,23 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
     setCombatants((cs) => cs.filter((c) => c.id !== id));
   };
 
-  const nextTurn = () => setTurnIdx((i) => (combatants.length ? (i + 1) % combatants.length : 0));
-  const prevTurn = () => setTurnIdx((i) => (combatants.length ? (i - 1 + combatants.length) % combatants.length : 0));
+  const combatStarted = combatants.length > 0 && combatants.every((c) => c.initRoll !== null);
+
+  const nextTurn = () => {
+    if (!combatants.length) return;
+    setTurnIdx((i) => {
+      const next = (i + 1) % combatants.length;
+      if (combatStarted && next === 0) setRound((r) => r + 1);
+      return next;
+    });
+  };
+  const prevTurn = () => {
+    if (!combatants.length) return;
+    setTurnIdx((i) => {
+      if (combatStarted && i === 0) setRound((r) => Math.max(1, r - 1));
+      return (i - 1 + combatants.length) % combatants.length;
+    });
+  };
 
   const hpDeltas = [1, 2, 3, 5, 10];
   const activeHpCombatant = combatants.find((c) => c.id === hpOpen) ?? null;
