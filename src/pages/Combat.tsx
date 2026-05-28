@@ -579,26 +579,39 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                       <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
                     </div>
                     <div>
-                      <Label>Vida</Label>
-                      <Input type="number" value={draft.hp} onChange={(e) => setDraft({ ...draft, hp: parseInt(e.target.value) || 0 })} />
-                    </div>
-                    <div>
                       <Label>Armadura</Label>
                       <Input type="number" value={draft.ac} onChange={(e) => setDraft({ ...draft, ac: parseInt(e.target.value) || 0 })} />
                     </div>
                     <div>
-                      <Label>Iniciativa</Label>
-                      <Input value={draft.init} onChange={(e) => setDraft({ ...draft, init: e.target.value })} placeholder="1d20+3" />
+                      <Label>Vida</Label>
+                      <Input type="number" value={draft.hp} onChange={(e) => setDraft({ ...draft, hp: parseInt(e.target.value) || 0 })} />
                     </div>
-                    <div>
-                      <Label>Color</Label>
-                      <Select value={draft.alignment} onValueChange={(v) => setDraft({ ...draft, alignment: v as any })}>
+                    <div className="col-span-2">
+                      <Label>Tipo</Label>
+                      <Select value={draft.alignment} onValueChange={(v) => setDraft({ ...draft, alignment: v as Alignment })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="friend">Amigo (verde)</SelectItem>
-                          <SelectItem value="enemy">Enemigo (rojo)</SelectItem>
+                          <SelectItem value="player">Jugador (verde)</SelectItem>
+                          <SelectItem value="monster">Monstruo (rojo)</SelectItem>
+                          <SelectItem value="npc">NPC (amarillo)</SelectItem>
+                          <SelectItem value="structure">Estructura/Objeto (azul)</SelectItem>
+                          <SelectItem value="other">Otro</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Bonus de iniciativa</Label>
+                        <span className="text-sm font-mono">1d20{draft.initBonus > 0 ? `+${draft.initBonus}` : draft.initBonus < 0 ? draft.initBonus : ''}</span>
+                      </div>
+                      <Slider
+                        className="mt-3"
+                        min={-10}
+                        max={10}
+                        step={1}
+                        value={[draft.initBonus]}
+                        onValueChange={(v) => setDraft({ ...draft, initBonus: v[0] })}
+                      />
                     </div>
                     <label className="col-span-2 flex items-center gap-2 text-sm">
                       <input type="checkbox" checked={draft.save} onChange={(e) => setDraft({ ...draft, save: e.target.checked })} />
