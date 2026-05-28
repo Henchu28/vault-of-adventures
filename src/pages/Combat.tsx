@@ -629,6 +629,11 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
               <Button size="sm" variant="secondary" onClick={rollAllInitiative} disabled={!combatants.length}>
                 Tirar iniciativa
               </Button>
+              {combatStarted && (
+                <div className="ml-auto px-3 py-1 rounded-md bg-primary/15 border border-primary/40 text-sm font-semibold">
+                  Ronda {round}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
