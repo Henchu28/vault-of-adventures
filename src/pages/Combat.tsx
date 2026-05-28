@@ -15,6 +15,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, BookmarkPlus, Menu, Dice6, Users, FolderPlus, Pencil } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
+
+type Alignment = 'player' | 'monster' | 'npc' | 'structure' | 'other';
+
+const ALIGNMENT_LABELS: Record<Alignment, string> = {
+  player: 'Jugador',
+  monster: 'Monstruo',
+  npc: 'NPC',
+  structure: 'Estructura/Objeto',
+  other: 'Otro',
+};
+
+const ALIGNMENT_BORDER: Record<Alignment, string> = {
+  player: 'border-l-green-500 border-r-green-500',
+  monster: 'border-l-red-500 border-r-red-500',
+  npc: 'border-l-yellow-500 border-r-yellow-500',
+  structure: 'border-l-blue-500 border-r-blue-500',
+  other: 'border-l-muted-foreground border-r-muted-foreground',
+};
+
+const normalizeAlignment = (a: string | null | undefined): Alignment => {
+  if (a === 'friend') return 'player';
+  if (a === 'enemy') return 'monster';
+  if (a === 'player' || a === 'monster' || a === 'npc' || a === 'structure' || a === 'other') return a;
+  return 'other';
+};
 
 type SavedCreature = { id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string };
 type CreatureGroup = { id: string; name: string; members: SavedCreature[] };
