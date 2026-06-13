@@ -673,8 +673,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                 return (
                   <div
                     key={c.id}
-                    onClick={() => { setHpOpen(c.id); setHpSign(-1); }}
-                    className={`cursor-pointer flex items-center justify-between gap-3 p-3 rounded bg-card hover:bg-muted/30 transition-all ${borderWidth} ${color}`}
+                    className={`flex items-center justify-between gap-3 p-3 rounded bg-card transition-all ${borderWidth} ${color}`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate">{c.name}</div>
@@ -685,14 +684,14 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="relative">
+                      <button className="relative" onClick={() => { setHpOpen(c.id); setHpSign(-1); }}>
                         <Heart className="w-9 h-9 text-red-500 fill-red-500/20" />
                         <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">{c.hp}</span>
-                      </div>
-                      <div className="relative">
+                      </button>
+                      <button className="relative" onClick={() => { setAcOpen(c.id); setAcSign(-1); }}>
                         <Shield className="w-9 h-9 text-blue-500 fill-blue-500/20" />
                         <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">{c.ac}</span>
-                      </div>
+                      </button>
                       <Button
                         size="icon" variant="ghost" className="h-7 w-7"
                         onClick={(e) => { e.stopPropagation(); removeCombatant(c.id); }}
