@@ -261,7 +261,7 @@ function Calculator({ savedAttacks, onSave, onDelete, onLoad }: {
       <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
         {savedAttacks.map((a) => (
           <div key={a.id} className="flex items-center gap-1 p-2 rounded border border-border bg-card hover:bg-muted/40">
-            <button className="flex-1 text-left" onClick={() => { setFormula(a.formula); setResult(null); }}>
+            <button className="flex-1 text-left" onClick={() => loadAttack(a.formula)}>
               <div className="text-sm font-medium truncate">{a.name}</div>
               <div className="text-xs text-muted-foreground truncate">{a.formula}</div>
             </button>
