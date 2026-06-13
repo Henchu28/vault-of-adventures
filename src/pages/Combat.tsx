@@ -382,13 +382,17 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
   const [addOpen, setAddOpen] = useState(false);
   const [hpOpen, setHpOpen] = useState<string | null>(null);
   const [hpSign, setHpSign] = useState<1 | -1>(-1);
+  const [acOpen, setAcOpen] = useState<string | null>(null);
+  const [acSign, setAcSign] = useState<1 | -1>(-1);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [addedGroupIds, setAddedGroupIds] = useState<string[]>([]);
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
-  const [groupPicks, setGroupPicks] = useState<Record<string, boolean>>({});
+  const [groupPicks, setGroupPicks] = useState<Record<string, number>>({});
   const [editGroupOpen, setEditGroupOpen] = useState(false);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editGroupName, setEditGroupName] = useState('');
-  const [editGroupPicks, setEditGroupPicks] = useState<Record<string, boolean>>({});
+  const [editGroupPicks, setEditGroupPicks] = useState<Record<string, number>>({});
 
   const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, initBonus: 0, alignment: 'monster' as Alignment, save: false });
   const [round, setRound] = useState(1);
