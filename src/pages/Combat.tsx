@@ -444,9 +444,11 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
         initRoll: null,
       }];
     });
+    setSheetOpen(false);
   };
 
   const addGroup = (g: CreatureGroup) => {
+    if (addedGroupIds.includes(g.id)) return;
     setCombatants((cs) => {
       const next: Combatant[] = [...cs];
       for (const s of g.members) {
@@ -460,6 +462,8 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
       }
       return next;
     });
+    setAddedGroupIds((ids) => [...ids, g.id]);
+    setSheetOpen(false);
   };
 
   const rollAllInitiative = () => {
