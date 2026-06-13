@@ -485,8 +485,16 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
     setCombatants((cs) => cs.map((c) => c.id === id ? { ...c, hp: Math.max(0, c.hp + delta) } : c));
   };
 
+  const adjustAc = (id: string, delta: number) => {
+    setCombatants((cs) => cs.map((c) => c.id === id ? { ...c, ac: Math.max(0, c.ac + delta) } : c));
+  };
+
   const removeCombatant = (id: string) => {
-    setCombatants((cs) => cs.filter((c) => c.id !== id));
+    setCombatants((cs) => {
+      const next = cs.filter((c) => c.id !== id);
+      if (next.length === 0) setAddedGroupIds([]);
+      return next;
+    });
   };
 
   const combatStarted = combatants.length > 0 && combatants.every((c) => c.initRoll !== null);
