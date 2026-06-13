@@ -278,7 +278,7 @@ function Calculator({ savedAttacks, onSave, onDelete, onLoad }: {
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-lg flex items-center gap-2"><Dice6 className="w-5 h-5" /> Calculadora</CardTitle>
-        <Sheet>
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="lg:hidden gap-1"><Menu className="w-4 h-4" /> Guardados</Button>
           </SheetTrigger>
