@@ -2,12 +2,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Sword, Map, Music, BookOpen, Dice6 } from 'lucide-react';
+import { Users, Sword, Map, Music, BookOpen, Dice6, ScrollText, Swords } from 'lucide-react';
 import charactersImg from '@/assets/characters-card.jpg';
 import campaignsImg from '@/assets/campaigns-card.jpg';
 import mapsImg from '@/assets/maps-card.jpg';
 import musicImg from '@/assets/music-card.jpg';
 import notesImg from '@/assets/notes-card.jpg';
+import combatImg from '@/assets/combat-card.jpg';
+import fichaImg from '@/assets/ficha-card.jpg';
 
 const Index = () => {
   const { user, profile } = useAuth();
@@ -205,6 +207,31 @@ const Index = () => {
           </CardContent>
         </Card>
 
+        <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+          <div 
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${fichaImg})` }}
+          >
+            <div className="absolute inset-0 bg-primary/40" />
+            <div className="absolute top-4 left-4">
+              <ScrollText className="w-8 h-8 text-primary-foreground" />
+            </div>
+          </div>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <span>Ficha</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              Your character sheet
+            </CardDescription>
+            <Link to="/ficha">
+              <Button className="w-full bg-primary hover:bg-primary/90">View Ficha</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         {profile?.role === 'master' && (
           <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
             <div 
@@ -227,6 +254,33 @@ const Index = () => {
               </CardDescription>
               <Link to="/notes">
                 <Button className="w-full bg-primary hover:bg-primary/90">View Notes</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {profile?.role === 'master' && (
+          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+            <div 
+              className="h-48 bg-cover bg-center relative"
+              style={{ backgroundImage: `url(${combatImg})` }}
+            >
+              <div className="absolute inset-0 bg-primary/40" />
+              <div className="absolute top-4 left-4">
+                <Swords className="w-8 h-8 text-primary-foreground" />
+              </div>
+            </div>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <span>Combat</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="mb-4">
+                Calculator and combat tracker
+              </CardDescription>
+              <Link to="/combat">
+                <Button className="w-full bg-primary hover:bg-primary/90">Open Combat</Button>
               </Link>
             </CardContent>
           </Card>

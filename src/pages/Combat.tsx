@@ -14,7 +14,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, BookmarkPlus, Menu, Dice6, Users, FolderPlus, Pencil } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+
 import { Slider } from '@/components/ui/slider';
 
 type Alignment = 'player' | 'monster' | 'npc' | 'structure' | 'other';
@@ -155,6 +155,13 @@ function Calculator({ savedAttacks, onSave, onDelete, onLoad }: {
   const [result, setResult] = useState<RollResult | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const loadAttack = (f: string) => {
+    setResult(null);
+    setFormula((prev) => (prev ? `${prev}+${f}` : f));
+    setSheetOpen(false);
+  };
 
   const append = (s: string) => {
     setResult(null);
@@ -254,7 +261,7 @@ function Calculator({ savedAttacks, onSave, onDelete, onLoad }: {
       <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
         {savedAttacks.map((a) => (
           <div key={a.id} className="flex items-center gap-1 p-2 rounded border border-border bg-card hover:bg-muted/40">
-            <button className="flex-1 text-left" onClick={() => { setFormula(a.formula); setResult(null); }}>
+            <button className="flex-1 text-left" onClick={() => loadAttack(a.formula)}>
               <div className="text-sm font-medium truncate">{a.name}</div>
               <div className="text-xs text-muted-foreground truncate">{a.formula}</div>
             </button>
@@ -271,7 +278,7 @@ function Calculator({ savedAttacks, onSave, onDelete, onLoad }: {
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-lg flex items-center gap-2"><Dice6 className="w-5 h-5" /> Calculadora</CardTitle>
-        <Sheet>
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="lg:hidden gap-1"><Menu className="w-4 h-4" /> Guardados</Button>
           </SheetTrigger>
@@ -375,13 +382,17 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
   const [addOpen, setAddOpen] = useState(false);
   const [hpOpen, setHpOpen] = useState<string | null>(null);
   const [hpSign, setHpSign] = useState<1 | -1>(-1);
+  const [acOpen, setAcOpen] = useState<string | null>(null);
+  const [acSign, setAcSign] = useState<1 | -1>(-1);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [addedGroupIds, setAddedGroupIds] = useState<string[]>([]);
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
-  const [groupPicks, setGroupPicks] = useState<Record<string, boolean>>({});
+  const [groupPicks, setGroupPicks] = useState<Record<string, number>>({});
   const [editGroupOpen, setEditGroupOpen] = useState(false);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editGroupName, setEditGroupName] = useState('');
-  const [editGroupPicks, setEditGroupPicks] = useState<Record<string, boolean>>({});
+  const [editGroupPicks, setEditGroupPicks] = useState<Record<string, number>>({});
 
   const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, initBonus: 0, alignment: 'monster' as Alignment, save: false });
   const [round, setRound] = useState(1);
@@ -433,9 +444,11 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
         initRoll: null,
       }];
     });
+    setSheetOpen(false);
   };
 
   const addGroup = (g: CreatureGroup) => {
+    if (addedGroupIds.includes(g.id)) return;
     setCombatants((cs) => {
       const next: Combatant[] = [...cs];
       for (const s of g.members) {
@@ -449,6 +462,8 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
       }
       return next;
     });
+    setAddedGroupIds((ids) => [...ids, g.id]);
+    setSheetOpen(false);
   };
 
   const rollAllInitiative = () => {
@@ -470,8 +485,16 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
     setCombatants((cs) => cs.map((c) => c.id === id ? { ...c, hp: Math.max(0, c.hp + delta) } : c));
   };
 
+  const adjustAc = (id: string, delta: number) => {
+    setCombatants((cs) => cs.map((c) => c.id === id ? { ...c, ac: Math.max(0, c.ac + delta) } : c));
+  };
+
   const removeCombatant = (id: string) => {
-    setCombatants((cs) => cs.filter((c) => c.id !== id));
+    setCombatants((cs) => {
+      const next = cs.filter((c) => c.id !== id);
+      if (next.length === 0) setAddedGroupIds([]);
+      return next;
+    });
   };
 
   const combatStarted = combatants.length > 0 && combatants.every((c) => c.initRoll !== null);
@@ -494,6 +517,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
 
   const hpDeltas = [1, 2, 3, 5, 10];
   const activeHpCombatant = combatants.find((c) => c.id === hpOpen) ?? null;
+  const activeAcCombatant = combatants.find((c) => c.id === acOpen) ?? null;
 
   const SavedCreaturesList = (
     <div className="space-y-3">
@@ -508,15 +532,15 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
         <div className="space-y-1 max-h-[30vh] overflow-y-auto pr-1">
           {groups.map((g) => (
             <div key={g.id} className="flex items-center gap-1 p-2 rounded border border-border bg-card hover:bg-muted/40">
-              <button className="flex-1 text-left" onClick={() => addGroup(g)}>
-                <div className="text-sm font-medium truncate flex items-center gap-1"><Users className="w-3 h-3" /> {g.name}</div>
+              <button className="flex-1 text-left disabled:opacity-50" onClick={() => addGroup(g)} disabled={addedGroupIds.includes(g.id)}>
+                <div className="text-sm font-medium truncate flex items-center gap-1"><Users className="w-3 h-3" /> {g.name}{addedGroupIds.includes(g.id) ? ' (añadido)' : ''}</div>
                 <div className="text-xs text-muted-foreground truncate">{g.members.map(m => m.name).join(', ') || 'Vacío'}</div>
               </button>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
                 setEditingGroupId(g.id);
                 setEditGroupName(g.name);
-                const picks: Record<string, boolean> = {};
-                for (const m of g.members) picks[m.id] = true;
+                const picks: Record<string, number> = {};
+                for (const m of g.members) picks[m.id] = (picks[m.id] || 0) + 1;
                 setEditGroupPicks(picks);
                 setEditGroupOpen(true);
               }}>
@@ -553,7 +577,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-lg flex items-center gap-2"><Swords className="w-5 h-5" /> Combate</CardTitle>
-        <Sheet>
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="lg:hidden gap-1"><Menu className="w-4 h-4" /> Criaturas</Button>
           </SheetTrigger>
@@ -649,8 +673,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                 return (
                   <div
                     key={c.id}
-                    onClick={() => { setHpOpen(c.id); setHpSign(-1); }}
-                    className={`cursor-pointer flex items-center justify-between gap-3 p-3 rounded bg-card hover:bg-muted/30 transition-all ${borderWidth} ${color}`}
+                    className={`flex items-center justify-between gap-3 p-3 rounded bg-card transition-all ${borderWidth} ${color}`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate">{c.name}</div>
@@ -661,14 +684,14 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="relative">
+                      <button className="relative" onClick={() => { setHpOpen(c.id); setHpSign(-1); }}>
                         <Heart className="w-9 h-9 text-red-500 fill-red-500/20" />
                         <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">{c.hp}</span>
-                      </div>
-                      <div className="relative">
+                      </button>
+                      <button className="relative" onClick={() => { setAcOpen(c.id); setAcSign(-1); }}>
                         <Shield className="w-9 h-9 text-blue-500 fill-blue-500/20" />
                         <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">{c.ac}</span>
-                      </div>
+                      </button>
                       <Button
                         size="icon" variant="ghost" className="h-7 w-7"
                         onClick={(e) => { e.stopPropagation(); removeCombatant(c.id); }}
@@ -746,6 +769,66 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
           </DialogContent>
         </Dialog>
 
+        <Dialog open={!!acOpen} onOpenChange={(o) => !o && setAcOpen(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>{activeAcCombatant?.name} · Armadura</DialogTitle></DialogHeader>
+            {activeAcCombatant && (
+              <div className="relative aspect-square flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative">
+                    <Shield className="w-24 h-24 text-blue-500 fill-blue-500/20" />
+                    <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold">{activeAcCombatant.ac}</span>
+                  </div>
+                </div>
+                {(() => {
+                  const items = [
+                    { label: '1', delta: 1 },
+                    { label: '2', delta: 2 },
+                    { label: '3', delta: 3 },
+                    { label: '5', delta: 5 },
+                    { label: '10', delta: 10 },
+                    { label: '+', isSign: true, sign: 1 as 1 },
+                    { label: '-', isSign: true, sign: -1 as -1 },
+                  ];
+                  return items.map((it, i) => {
+                    const angle = (i / items.length) * Math.PI * 2 - Math.PI / 2;
+                    const radius = 110;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    if ((it as any).isSign) {
+                      const sign = (it as any).sign as 1 | -1;
+                      return (
+                        <Button
+                          key={it.label}
+                          size="icon"
+                          variant={acSign === sign ? 'default' : 'outline'}
+                          className="absolute h-11 w-11 rounded-full text-lg"
+                          style={{ transform: `translate(${x}px, ${y}px)` }}
+                          onClick={() => setAcSign(sign)}
+                        >
+                          {it.label}
+                        </Button>
+                      );
+                    }
+                    return (
+                      <Button
+                        key={it.label}
+                        size="icon"
+                        variant="secondary"
+                        className="absolute h-11 w-11 rounded-full text-sm"
+                        style={{ transform: `translate(${x}px, ${y}px)` }}
+                        onClick={() => adjustAc(activeAcCombatant.id, acSign * (it as any).delta)}
+                      >
+                        {acSign === 1 ? '+' : '−'}{it.label}
+                      </Button>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={groupOpen} onOpenChange={setGroupOpen}>
           <DialogContent>
             <DialogHeader><DialogTitle>Nuevo grupo</DialogTitle></DialogHeader>
@@ -755,25 +838,30 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                 <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Ej: Personajes Campaña Azur" />
               </div>
               <div>
-                <Label>Criaturas incluidas</Label>
+                <Label>Criaturas incluidas (puedes repetir)</Label>
                 <div className="mt-2 max-h-64 overflow-y-auto space-y-1 border border-border rounded p-2">
-                  {savedCreatures.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40 cursor-pointer">
-                      <Checkbox
-                        checked={!!groupPicks[s.id]}
-                        onCheckedChange={(v) => setGroupPicks((p) => ({ ...p, [s.id]: !!v }))}
-                      />
-                      <span className="truncate">{s.name}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
-                    </label>
-                  ))}
+                  {savedCreatures.map((s) => {
+                    const count = groupPicks[s.id] || 0;
+                    return (
+                      <div key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40">
+                        <span className="truncate flex-1">{s.name}</span>
+                        <span className="text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
+                        <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => setGroupPicks((p) => ({ ...p, [s.id]: Math.max(0, (p[s.id] || 0) - 1) }))}>-</Button>
+                        <span className="w-5 text-center font-mono">{count}</span>
+                        <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => setGroupPicks((p) => ({ ...p, [s.id]: (p[s.id] || 0) + 1 }))}>+</Button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
             <DialogFooter>
               <Button
                 onClick={() => {
-                  const ids = Object.keys(groupPicks).filter((k) => groupPicks[k]);
+                  const ids: string[] = [];
+                  for (const [id, count] of Object.entries(groupPicks)) {
+                    for (let k = 0; k < count; k++) ids.push(id);
+                  }
                   if (!groupName.trim() || ids.length === 0) return;
                   onCreateGroup(groupName.trim(), ids);
                   setGroupOpen(false);
@@ -792,25 +880,30 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                 <Input value={editGroupName} onChange={(e) => setEditGroupName(e.target.value)} placeholder="Ej: Personajes Campaña Azur" />
               </div>
               <div>
-                <Label>Criaturas incluidas</Label>
+                <Label>Criaturas incluidas (puedes repetir)</Label>
                 <div className="mt-2 max-h-64 overflow-y-auto space-y-1 border border-border rounded p-2">
-                  {savedCreatures.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40 cursor-pointer">
-                      <Checkbox
-                        checked={!!editGroupPicks[s.id]}
-                        onCheckedChange={(v) => setEditGroupPicks((p) => ({ ...p, [s.id]: !!v }))}
-                      />
-                      <span className="truncate">{s.name}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
-                    </label>
-                  ))}
+                  {savedCreatures.map((s) => {
+                    const count = editGroupPicks[s.id] || 0;
+                    return (
+                      <div key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40">
+                        <span className="truncate flex-1">{s.name}</span>
+                        <span className="text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
+                        <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => setEditGroupPicks((p) => ({ ...p, [s.id]: Math.max(0, (p[s.id] || 0) - 1) }))}>-</Button>
+                        <span className="w-5 text-center font-mono">{count}</span>
+                        <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => setEditGroupPicks((p) => ({ ...p, [s.id]: (p[s.id] || 0) + 1 }))}>+</Button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
             <DialogFooter>
               <Button
                 onClick={() => {
-                  const ids = Object.keys(editGroupPicks).filter((k) => editGroupPicks[k]);
+                  const ids: string[] = [];
+                  for (const [id, count] of Object.entries(editGroupPicks)) {
+                    for (let k = 0; k < count; k++) ids.push(id);
+                  }
                   if (!editGroupName.trim() || ids.length === 0 || !editingGroupId) return;
                   onUpdateGroup(editingGroupId, editGroupName.trim(), ids);
                   setEditGroupOpen(false);
