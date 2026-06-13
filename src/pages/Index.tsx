@@ -2,12 +2,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Sword, Map, Music, BookOpen, Dice6 } from 'lucide-react';
+import { Users, Sword, Map, Music, BookOpen, Dice6, ScrollText, Swords } from 'lucide-react';
 import charactersImg from '@/assets/characters-card.jpg';
 import campaignsImg from '@/assets/campaigns-card.jpg';
 import mapsImg from '@/assets/maps-card.jpg';
 import musicImg from '@/assets/music-card.jpg';
 import notesImg from '@/assets/notes-card.jpg';
+import combatImg from '@/assets/combat-card.jpg';
+import fichaImg from '@/assets/ficha-card.jpg';
 
 const Index = () => {
   const { user, profile } = useAuth();
