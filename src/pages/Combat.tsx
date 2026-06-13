@@ -155,6 +155,13 @@ function Calculator({ savedAttacks, onSave, onDelete, onLoad }: {
   const [result, setResult] = useState<RollResult | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const loadAttack = (f: string) => {
+    setResult(null);
+    setFormula((prev) => (prev ? `${prev}+${f}` : f));
+    setSheetOpen(false);
+  };
 
   const append = (s: string) => {
     setResult(null);
