@@ -769,6 +769,66 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
           </DialogContent>
         </Dialog>
 
+        <Dialog open={!!acOpen} onOpenChange={(o) => !o && setAcOpen(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>{activeAcCombatant?.name} · Armadura</DialogTitle></DialogHeader>
+            {activeAcCombatant && (
+              <div className="relative aspect-square flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative">
+                    <Shield className="w-24 h-24 text-blue-500 fill-blue-500/20" />
+                    <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold">{activeAcCombatant.ac}</span>
+                  </div>
+                </div>
+                {(() => {
+                  const items = [
+                    { label: '1', delta: 1 },
+                    { label: '2', delta: 2 },
+                    { label: '3', delta: 3 },
+                    { label: '5', delta: 5 },
+                    { label: '10', delta: 10 },
+                    { label: '+', isSign: true, sign: 1 as 1 },
+                    { label: '-', isSign: true, sign: -1 as -1 },
+                  ];
+                  return items.map((it, i) => {
+                    const angle = (i / items.length) * Math.PI * 2 - Math.PI / 2;
+                    const radius = 110;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    if ((it as any).isSign) {
+                      const sign = (it as any).sign as 1 | -1;
+                      return (
+                        <Button
+                          key={it.label}
+                          size="icon"
+                          variant={acSign === sign ? 'default' : 'outline'}
+                          className="absolute h-11 w-11 rounded-full text-lg"
+                          style={{ transform: `translate(${x}px, ${y}px)` }}
+                          onClick={() => setAcSign(sign)}
+                        >
+                          {it.label}
+                        </Button>
+                      );
+                    }
+                    return (
+                      <Button
+                        key={it.label}
+                        size="icon"
+                        variant="secondary"
+                        className="absolute h-11 w-11 rounded-full text-sm"
+                        style={{ transform: `translate(${x}px, ${y}px)` }}
+                        onClick={() => adjustAc(activeAcCombatant.id, acSign * (it as any).delta)}
+                      >
+                        {acSign === 1 ? '+' : '−'}{it.label}
+                      </Button>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={groupOpen} onOpenChange={setGroupOpen}>
           <DialogContent>
             <DialogHeader><DialogTitle>Nuevo grupo</DialogTitle></DialogHeader>
@@ -778,25 +838,30 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                 <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Ej: Personajes Campaña Azur" />
               </div>
               <div>
-                <Label>Criaturas incluidas</Label>
+                <Label>Criaturas incluidas (puedes repetir)</Label>
                 <div className="mt-2 max-h-64 overflow-y-auto space-y-1 border border-border rounded p-2">
-                  {savedCreatures.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40 cursor-pointer">
-                      <Checkbox
-                        checked={!!groupPicks[s.id]}
-                        onCheckedChange={(v) => setGroupPicks((p) => ({ ...p, [s.id]: !!v }))}
-                      />
-                      <span className="truncate">{s.name}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
-                    </label>
-                  ))}
+                  {savedCreatures.map((s) => {
+                    const count = groupPicks[s.id] || 0;
+                    return (
+                      <div key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40">
+                        <span className="truncate flex-1">{s.name}</span>
+                        <span className="text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
+                        <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => setGroupPicks((p) => ({ ...p, [s.id]: Math.max(0, (p[s.id] || 0) - 1) }))}>-</Button>
+                        <span className="w-5 text-center font-mono">{count}</span>
+                        <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => setGroupPicks((p) => ({ ...p, [s.id]: (p[s.id] || 0) + 1 }))}>+</Button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
             <DialogFooter>
               <Button
                 onClick={() => {
-                  const ids = Object.keys(groupPicks).filter((k) => groupPicks[k]);
+                  const ids: string[] = [];
+                  for (const [id, count] of Object.entries(groupPicks)) {
+                    for (let k = 0; k < count; k++) ids.push(id);
+                  }
                   if (!groupName.trim() || ids.length === 0) return;
                   onCreateGroup(groupName.trim(), ids);
                   setGroupOpen(false);
@@ -815,25 +880,30 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
                 <Input value={editGroupName} onChange={(e) => setEditGroupName(e.target.value)} placeholder="Ej: Personajes Campaña Azur" />
               </div>
               <div>
-                <Label>Criaturas incluidas</Label>
+                <Label>Criaturas incluidas (puedes repetir)</Label>
                 <div className="mt-2 max-h-64 overflow-y-auto space-y-1 border border-border rounded p-2">
-                  {savedCreatures.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40 cursor-pointer">
-                      <Checkbox
-                        checked={!!editGroupPicks[s.id]}
-                        onCheckedChange={(v) => setEditGroupPicks((p) => ({ ...p, [s.id]: !!v }))}
-                      />
-                      <span className="truncate">{s.name}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
-                    </label>
-                  ))}
+                  {savedCreatures.map((s) => {
+                    const count = editGroupPicks[s.id] || 0;
+                    return (
+                      <div key={s.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-muted/40">
+                        <span className="truncate flex-1">{s.name}</span>
+                        <span className="text-xs text-muted-foreground">HP {s.hp} · AC {s.ac}</span>
+                        <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => setEditGroupPicks((p) => ({ ...p, [s.id]: Math.max(0, (p[s.id] || 0) - 1) }))}>-</Button>
+                        <span className="w-5 text-center font-mono">{count}</span>
+                        <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => setEditGroupPicks((p) => ({ ...p, [s.id]: (p[s.id] || 0) + 1 }))}>+</Button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
             <DialogFooter>
               <Button
                 onClick={() => {
-                  const ids = Object.keys(editGroupPicks).filter((k) => editGroupPicks[k]);
+                  const ids: string[] = [];
+                  for (const [id, count] of Object.entries(editGroupPicks)) {
+                    for (let k = 0; k < count; k++) ids.push(id);
+                  }
                   if (!editGroupName.trim() || ids.length === 0 || !editingGroupId) return;
                   onUpdateGroup(editingGroupId, editGroupName.trim(), ids);
                   setEditGroupOpen(false);
