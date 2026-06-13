@@ -207,6 +207,31 @@ const Index = () => {
           </CardContent>
         </Card>
 
+        <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+          <div 
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${fichaImg})` }}
+          >
+            <div className="absolute inset-0 bg-primary/40" />
+            <div className="absolute top-4 left-4">
+              <ScrollText className="w-8 h-8 text-primary-foreground" />
+            </div>
+          </div>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <span>Ficha</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              Your character sheet
+            </CardDescription>
+            <Link to="/ficha">
+              <Button className="w-full bg-primary hover:bg-primary/90">View Ficha</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         {profile?.role === 'master' && (
           <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
             <div 
