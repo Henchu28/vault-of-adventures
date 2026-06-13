@@ -532,15 +532,15 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
         <div className="space-y-1 max-h-[30vh] overflow-y-auto pr-1">
           {groups.map((g) => (
             <div key={g.id} className="flex items-center gap-1 p-2 rounded border border-border bg-card hover:bg-muted/40">
-              <button className="flex-1 text-left" onClick={() => addGroup(g)}>
-                <div className="text-sm font-medium truncate flex items-center gap-1"><Users className="w-3 h-3" /> {g.name}</div>
+              <button className="flex-1 text-left disabled:opacity-50" onClick={() => addGroup(g)} disabled={addedGroupIds.includes(g.id)}>
+                <div className="text-sm font-medium truncate flex items-center gap-1"><Users className="w-3 h-3" /> {g.name}{addedGroupIds.includes(g.id) ? ' (añadido)' : ''}</div>
                 <div className="text-xs text-muted-foreground truncate">{g.members.map(m => m.name).join(', ') || 'Vacío'}</div>
               </button>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
                 setEditingGroupId(g.id);
                 setEditGroupName(g.name);
-                const picks: Record<string, boolean> = {};
-                for (const m of g.members) picks[m.id] = true;
+                const picks: Record<string, number> = {};
+                for (const m of g.members) picks[m.id] = (picks[m.id] || 0) + 1;
                 setEditGroupPicks(picks);
                 setEditGroupOpen(true);
               }}>
