@@ -517,6 +517,7 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
 
   const hpDeltas = [1, 2, 3, 5, 10];
   const activeHpCombatant = combatants.find((c) => c.id === hpOpen) ?? null;
+  const activeAcCombatant = combatants.find((c) => c.id === acOpen) ?? null;
 
   const SavedCreaturesList = (
     <div className="space-y-3">
