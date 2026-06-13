@@ -258,6 +258,33 @@ const Index = () => {
             </CardContent>
           </Card>
         )}
+
+        {profile?.role === 'master' && (
+          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+            <div 
+              className="h-48 bg-cover bg-center relative"
+              style={{ backgroundImage: `url(${combatImg})` }}
+            >
+              <div className="absolute inset-0 bg-primary/40" />
+              <div className="absolute top-4 left-4">
+                <Swords className="w-8 h-8 text-primary-foreground" />
+              </div>
+            </div>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <span>Combat</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="mb-4">
+                Calculator and combat tracker
+              </CardDescription>
+              <Link to="/combat">
+                <Button className="w-full bg-primary hover:bg-primary/90">Open Combat</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
