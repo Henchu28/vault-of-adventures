@@ -196,6 +196,36 @@ export type Database = {
           },
         ]
       }
+      current_status: {
+        Row: {
+          created_at: string
+          current_hp: number
+          max_hp: number
+          name: string
+          notes: string
+          slot: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_hp?: number
+          max_hp?: number
+          name?: string
+          notes?: string
+          slot: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_hp?: number
+          max_hp?: number
+          name?: string
+          notes?: string
+          slot?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           content: string | null
@@ -482,6 +512,30 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      saved_combats: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          state: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          state?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          state?: Json
+          updated_at?: string
         }
         Relationships: []
       }
