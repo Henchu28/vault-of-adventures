@@ -74,9 +74,12 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
         {saved.length === 0 && <p className="text-muted-foreground">Sin combates guardados.</p>}
         {saved.map(combat => <div key={combat.id} className="flex gap-2">
           <Button variant="outline" className="flex-1 justify-start min-w-0" onClick={() => {
+            // Always mount a fresh tab id so the tracker re-initialises from the saved snapshot.
             const existing = tabs.find(tab => tab.savedId === combat.id);
-            if (existing) setActive(existing.id);
-            else { const id = crypto.randomUUID(); setTabs(previous => [...previous, { id, name: combat.name, savedId: combat.id, state: restoreCombat(combat.state) }]); setActive(id); }
+            const id = crypto.randomUUID();
+            const loaded = { id, name: combat.name, savedId: combat.id, state: restoreCombat(combat.state) };
+            setTabs(previous => existing ? previous.map(tab => tab.id === existing.id ? loaded : tab) : [...previous, loaded]);
+            setActive(id);
             setLoadOpen(false);
           }}><span className="truncate">{combat.name}</span></Button>
           <Button variant="ghost" size="icon" aria-label={`Eliminar ${combat.name}`} onClick={async () => {
