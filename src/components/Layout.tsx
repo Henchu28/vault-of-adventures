@@ -29,7 +29,7 @@ export function Layout({ children }: LayoutProps) {
     { path: '/campaigns', label: 'Campaigns', icon: Sword, show: true },
     { path: '/gallery', label: 'Gallery', icon: ImageIcon, show: true },
     { path: '/music', label: 'Music', icon: Music, show: true },
-    { path: '/notes', label: 'Notes', icon: BookOpen, show: isMaster },
+    { path: '/encyclopedia', label: 'Enciclopedia', icon: BookOpen, show: true },
     { path: '/ficha', label: 'Ficha', icon: ScrollText, show: true },
     { path: '/combat', label: 'Combat', icon: Swords, show: isMaster },
     { path: '/status', label: 'Status Actual', icon: ScrollText, show: true },

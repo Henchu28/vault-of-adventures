@@ -13,7 +13,7 @@ import Characters from "./pages/Characters";
 import Campaigns from "./pages/Campaigns";
 import Gallery from "./pages/Gallery";
 import Music from "./pages/Music";
-import Notes from "./pages/Notes";
+import Encyclopedia from "./pages/Encyclopedia";
 import Settings from "./pages/Settings";
 import Ficha from "./pages/Ficha";
 import Combat from "./pages/Combat";
@@ -47,8 +47,8 @@ const App = () => (
               <Route path="/music" element={
                 <ProtectedRoute><Layout><Music /></Layout></ProtectedRoute>
               } />
-              <Route path="/notes" element={
-                <ProtectedRoute requireMaster={true}><Layout><Notes /></Layout></ProtectedRoute>
+              <Route path="/encyclopedia" element={
+                <ProtectedRoute><Layout><Encyclopedia /></Layout></ProtectedRoute>
               } />
               <Route path="/settings" element={
                 <ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>
