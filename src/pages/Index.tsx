@@ -258,6 +258,11 @@ const Index = () => {
             </CardContent>
           </Card>
         )}
+        <Card className="overflow-hidden border-2 border-accent/20">
+          <img src={charactersImg} alt="Personajes de la campaña" className="h-48 w-full object-cover" />
+          <CardHeader><CardTitle>Status Actual</CardTitle></CardHeader>
+          <CardContent><Button asChild className="w-full"><Link to="/status">Status Actual</Link></Button></CardContent>
+        </Card>
 
         {profile?.role === 'master' && (
           <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">

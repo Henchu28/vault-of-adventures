@@ -17,6 +17,7 @@ import Notes from "./pages/Notes";
 import Settings from "./pages/Settings";
 import Ficha from "./pages/Ficha";
 import Combat from "./pages/Combat";
+import CurrentStatus from "./pages/CurrentStatus";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,9 @@ const App = () => (
               } />
               <Route path="/combat" element={
                 <ProtectedRoute requireMaster={true}><Layout><Combat /></Layout></ProtectedRoute>
+              } />
+              <Route path="/status" element={
+                <ProtectedRoute><Layout><CurrentStatus /></Layout></ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
             </Routes>
