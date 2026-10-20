@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { rollFormulaOnce, Combatant, CombatSnapshot, Alignment } from '@/lib/combat-state';
+import { CombatWorkspace } from '@/components/combat/CombatWorkspace';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -17,7 +19,6 @@ import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, B
 
 import { Slider } from '@/components/ui/slider';
 
-type Alignment = 'player' | 'monster' | 'npc' | 'structure' | 'other';
 
 const ALIGNMENT_LABELS: Record<Alignment, string> = {
   player: 'Jugador',
@@ -44,74 +45,6 @@ const normalizeAlignment = (a: string | null | undefined): Alignment => {
 
 type SavedCreature = { id: string; name: string; hp: number; ac: number; initiative_formula: string; alignment: string };
 type CreatureGroup = { id: string; name: string; members: SavedCreature[] };
-
-// ---------- Dice / formula engine ----------
-type Roll = { sides: number; value: number };
-type TermResult =
-  | { kind: 'num'; sign: 1 | -1; value: number }
-  | { kind: 'dice'; sign: 1 | -1; count: number; sides: number; rolls: number[] };
-
-function rollDie(sides: number) {
-  if (sides < 1) sides = 1;
-  return Math.floor(Math.random() * sides) + 1;
-}
-
-// Parse "1d20+5+3d4-2" into ordered terms with sign.
-function parseFormula(formula: string): { sign: 1 | -1; count: number; sides: number | null; isDice: boolean; literal: number }[] | null {
-  const cleaned = formula.replace(/\s+/g, '');
-  if (!cleaned) return null;
-  // tokens: split keeping + and -
-  const tokens: { sign: 1 | -1; body: string }[] = [];
-  let i = 0;
-  let sign: 1 | -1 = 1;
-  while (i < cleaned.length) {
-    const ch = cleaned[i];
-    if (ch === '+') { sign = 1; i++; continue; }
-    if (ch === '-') { sign = -1; i++; continue; }
-    let j = i;
-    while (j < cleaned.length && cleaned[j] !== '+' && cleaned[j] !== '-') j++;
-    tokens.push({ sign, body: cleaned.slice(i, j) });
-    i = j;
-    sign = 1;
-  }
-  const terms = [];
-  for (const t of tokens) {
-    const body = t.body.replace(/[()]/g, '');
-    if (!body) continue;
-    const m = body.match(/^(\d*)d(\d+)$/i);
-    if (m) {
-      const count = m[1] ? parseInt(m[1], 10) : 1;
-      const sides = parseInt(m[2], 10);
-      if (!count || !sides) return null;
-      terms.push({ sign: t.sign, count, sides, isDice: true, literal: 0 });
-    } else if (/^\d+$/.test(body)) {
-      terms.push({ sign: t.sign, count: 0, sides: null as any, isDice: false, literal: parseInt(body, 10) });
-    } else {
-      return null;
-    }
-  }
-  return terms;
-}
-
-function rollFormulaOnce(formula: string): { parts: string[]; total: number } | null {
-  const terms = parseFormula(formula);
-  if (!terms) return null;
-  const parts: string[] = [];
-  let total = 0;
-  for (const t of terms) {
-    if (t.isDice) {
-      const rolls: number[] = [];
-      for (let k = 0; k < t.count; k++) rolls.push(rollDie(t.sides));
-      const sum = rolls.reduce((a, b) => a + b, 0);
-      total += t.sign * sum;
-      for (const r of rolls) parts.push((t.sign === -1 ? '-' : (parts.length ? '+' : '')) + r);
-    } else {
-      total += t.sign * t.literal;
-      parts.push((t.sign === -1 ? '-' : (parts.length ? '+' : '')) + t.literal);
-    }
-  }
-  return { parts, total };
-}
 
 type RollResult = {
   formula: string;
@@ -228,6 +161,11 @@ function Calculator({ savedAttacks, onSave, onDelete, onLoad }: {
     { label: '1', key: '1', variant: 'num' },
     { label: '2', key: '2', variant: 'num' },
     { label: '3', key: '3', variant: 'num' },
+    { label: '×', key: '*', variant: 'op' },
+    { label: '(', key: '(', variant: 'op' },
+    { label: '0', key: '0', variant: 'num' },
+    { label: ')', key: ')', variant: 'op' },
+    { label: '÷', key: '/', variant: 'op' },
   ];
 
   const renderRoll = (r: RollResult) => {
@@ -342,12 +280,7 @@ function Calculator({ savedAttacks, onSave, onDelete, onLoad }: {
                 </Button>
               ))}
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              <Button variant="default" className="h-12 row-span-2 col-span-1" onClick={() => onPress('enter')}>Enter</Button>
-              <Button variant="ghost" className="h-12 font-mono" onClick={() => onPress('0')}>0</Button>
-              <Button variant="outline" className="h-12 font-mono" onClick={() => onPress('(')}>(</Button>
-              <Button variant="outline" className="h-12 font-mono" onClick={() => onPress(')')}>)</Button>
-            </div>
+            <Button variant="default" className="h-12 w-full" onClick={() => onPress('enter')}>Enter</Button>
           </div>
         </div>
       </CardContent>
@@ -356,19 +289,9 @@ function Calculator({ savedAttacks, onSave, onDelete, onLoad }: {
 }
 
 // ---------- Combat tracker ----------
-type Combatant = {
-  id: string;
-  name: string;
-  hp: number;
-  maxHp: number;
-  ac: number;
-  initFormula: string;
-  alignment: Alignment;
-  initRoll: number | null;
-  initBreakdown?: string;
-};
-
-function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreature, onCreateGroup, onDeleteGroup, onUpdateGroup }: {
+function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreature, onCreateGroup, onDeleteGroup, onUpdateGroup, initialState, onStateChange }: {
+  initialState: CombatSnapshot;
+  onStateChange: (state: CombatSnapshot) => void;
   savedCreatures: SavedCreature[];
   groups: CreatureGroup[];
   onSaveCreature: (c: { name: string; hp: number; ac: number; initiative_formula: string; alignment: string }) => void;
@@ -377,15 +300,15 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
   onDeleteGroup: (id: string) => void;
   onUpdateGroup: (id: string, name: string, creatureIds: string[]) => void;
 }) {
-  const [combatants, setCombatants] = useState<Combatant[]>([]);
-  const [turnIdx, setTurnIdx] = useState(0);
+  const [combatants, setCombatants] = useState<Combatant[]>(initialState.combatants);
+  const [turnIdx, setTurnIdx] = useState(initialState.turnIdx);
   const [addOpen, setAddOpen] = useState(false);
   const [hpOpen, setHpOpen] = useState<string | null>(null);
   const [hpSign, setHpSign] = useState<1 | -1>(-1);
   const [acOpen, setAcOpen] = useState<string | null>(null);
   const [acSign, setAcSign] = useState<1 | -1>(-1);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [addedGroupIds, setAddedGroupIds] = useState<string[]>([]);
+  const [addedGroupIds, setAddedGroupIds] = useState<string[]>(initialState.addedGroupIds);
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupPicks, setGroupPicks] = useState<Record<string, number>>({});
@@ -395,7 +318,10 @@ function CombatTracker({ savedCreatures, groups, onSaveCreature, onDeleteCreatur
   const [editGroupPicks, setEditGroupPicks] = useState<Record<string, number>>({});
 
   const [draft, setDraft] = useState({ name: '', hp: 10, ac: 10, initBonus: 0, alignment: 'monster' as Alignment, save: false });
-  const [round, setRound] = useState(1);
+  const [round, setRound] = useState(initialState.round);
+  useEffect(() => {
+    onStateChange({ combatants, turnIdx, round, addedGroupIds });
+  }, [combatants, turnIdx, round, addedGroupIds]);
 
   const ordered = combatants;
 
@@ -955,10 +881,10 @@ export default function Combat() {
   useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [user?.id]);
 
   if (loading) return null;
-  if (!isMaster) return <div className="text-center py-12 text-muted-foreground">Solo el Máster puede ver Combat.</div>;
+  if (!isMaster || !user) return <div className="text-center py-12 text-muted-foreground">Solo el Máster puede ver Combat.</div>;
 
   const saveAttack = async (name: string, formula: string) => {
-    const { error } = await sb.from('saved_attacks').insert({ user_id: user!.id, name, formula });
+    const { error } = await sb.from('saved_attacks').insert({ user_id: user.id, name, formula });
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else loadAll();
   };
@@ -967,7 +893,7 @@ export default function Combat() {
     loadAll();
   };
   const saveCreature = async (c: { name: string; hp: number; ac: number; initiative_formula: string; alignment: string }) => {
-    const { error } = await sb.from('saved_creatures').insert({ user_id: user!.id, ...c });
+    const { error } = await sb.from('saved_creatures').insert({ user_id: user.id, ...c });
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else loadAll();
   };
@@ -976,7 +902,7 @@ export default function Combat() {
     loadAll();
   };
   const createGroup = async (name: string, creatureIds: string[]) => {
-    const { data, error } = await sb.from('saved_creature_groups').insert({ user_id: user!.id, name }).select().single();
+    const { data, error } = await sb.from('saved_creature_groups').insert({ user_id: user.id, name }).select().single();
     if (error || !data) { toast({ title: 'Error', description: error?.message, variant: 'destructive' }); return; }
     const rows = creatureIds.map((cid, i) => ({ group_id: data.id, creature_id: cid, position: i }));
     if (rows.length) {
@@ -1011,7 +937,9 @@ export default function Combat() {
           onDelete={deleteAttack}
           onLoad={() => {}}
         />
-        <CombatTracker
+        <CombatWorkspace renderTracker={(state, onChange) => <CombatTracker
+          initialState={state}
+          onStateChange={onChange}
           savedCreatures={savedCreatures}
           groups={groups}
           onSaveCreature={saveCreature}
@@ -1019,7 +947,7 @@ export default function Combat() {
           onCreateGroup={createGroup}
           onDeleteGroup={deleteGroup}
           onUpdateGroup={updateGroup}
-        />
+        />} />
       </div>
     </div>
   );
