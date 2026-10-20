@@ -232,32 +232,30 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {profile?.role === 'master' && (
-          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
-            <div 
-              className="h-48 bg-cover bg-center relative"
-              style={{ backgroundImage: `url(${notesImg})` }}
-            >
-              <div className="absolute inset-0 bg-primary/40" />
-              <div className="absolute top-4 left-4">
-                <BookOpen className="w-8 h-8 text-primary-foreground" />
-              </div>
+        <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
+          <div 
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${notesImg})` }}
+          >
+            <div className="absolute inset-0 bg-primary/40" />
+            <div className="absolute top-4 left-4">
+              <BookOpen className="w-8 h-8 text-primary-foreground" />
             </div>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <span>Master Notes</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="mb-4">
-                Organize your campaign notes
-              </CardDescription>
-              <Link to="/notes">
-                <Button className="w-full bg-primary hover:bg-primary/90">View Notes</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
+          </div>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <span>Enciclopedia</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              Archivos y documentos de la campaña
+            </CardDescription>
+            <Link to="/encyclopedia">
+              <Button className="w-full bg-primary hover:bg-primary/90">Ver Enciclopedia</Button>
+            </Link>
+          </CardContent>
+        </Card>
         <Card className="overflow-hidden border-2 border-accent/20">
           <img src={charactersImg} alt="Personajes de la campaña" className="h-48 w-full object-cover" />
           <CardHeader><CardTitle>Status Actual</CardTitle></CardHeader>
