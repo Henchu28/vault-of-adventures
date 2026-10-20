@@ -1,0 +1,4 @@
+CREATE POLICY "Signed in can view encyclopedia" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'encyclopedia');
+CREATE POLICY "Masters upload encyclopedia" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'encyclopedia' AND public.has_role(auth.uid(), 'master'::public.app_role));
+CREATE POLICY "Masters update encyclopedia" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'encyclopedia' AND public.has_role(auth.uid(), 'master'::public.app_role));
+CREATE POLICY "Masters delete encyclopedia" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'encyclopedia' AND public.has_role(auth.uid(), 'master'::public.app_role));
