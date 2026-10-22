@@ -35,3 +35,9 @@ export function useAppSync(tables: string[], onChange: () => void, delay = 300) 
     return () => { clearTimeout(timer); listeners.delete(listener); };
   }, [key, delay]);
 }
+
+/** For changes without a database trigger (e.g. file storage): tell other sessions directly. */
+export function notifyAppSync(table: string) {
+  ensureChannel();
+  void channel?.send({ type: 'broadcast', event: 'changed', payload: { table } });
+}
