@@ -2,6 +2,7 @@ import { useAppSync } from '@/hooks/useAppSync';
 import { useEffect, useState } from 'react';
 import { rollFormulaOnce, Combatant, CombatSnapshot, Alignment } from '@/lib/combat-state';
 import { CombatWorkspace } from '@/components/combat/CombatWorkspace';
+import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -883,7 +884,8 @@ export default function Combat() {
   useAppSync(['saved_attacks', 'saved_creatures', 'saved_creature_groups', 'saved_creature_group_members'], () => loadAll());
 
   if (loading) return null;
-  if (!isMaster || !user) return <div className="text-center py-12 text-muted-foreground">Solo el Máster puede ver Combat.</div>;
+  if (!user) return null;
+  if (!isMaster) return <PlayerCombatView />;
 
   const saveAttack = async (name: string, formula: string) => {
     const { error } = await sb.from('saved_attacks').insert({ user_id: user.id, name, formula });
