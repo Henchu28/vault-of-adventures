@@ -677,6 +677,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_combats_public: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+          state: Json
+          updated_at: string
+        }[]
+      }
       get_npcs_public: {
         Args: never
         Returns: {
