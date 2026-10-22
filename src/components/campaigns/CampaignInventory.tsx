@@ -1,3 +1,4 @@
+import { useAppSync } from '@/hooks/useAppSync';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ export function CampaignInventory({ campaignId }: CampaignInventoryProps) {
   const [newNotes, setNewNotes] = useState('');
 
   useEffect(() => { fetchItems(); }, [campaignId]);
+  useAppSync(['campaign_inventory'], () => fetchItems());
 
   const fetchItems = async () => {
     setLoading(true);

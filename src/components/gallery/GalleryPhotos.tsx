@@ -1,3 +1,4 @@
+import { useAppSync } from '@/hooks/useAppSync';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,6 +30,7 @@ export function GalleryPhotos() {
   const [formImage, setFormImage] = useState<File | null>(null);
 
   useEffect(() => { fetchPhotos(); }, []);
+  useAppSync(['character_photos'], () => fetchPhotos());
 
   const fetchPhotos = async () => {
     setLoading(true);

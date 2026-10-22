@@ -1,3 +1,4 @@
+import { useAppSync, notifyAppSync } from '@/hooks/useAppSync';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,8 +26,10 @@ export default function Encyclopedia() {
     setLoading(false);
   };
   useEffect(() => { void load(); }, []);
+  useAppSync(['encyclopedia'], () => void load());
 
   const upload = async (list: FileList | null) => {
+    setTimeout(() => notifyAppSync('encyclopedia'), 3000);
     if (!list?.length) return;
     setUploading(true);
     for (const file of Array.from(list)) {
@@ -45,6 +48,7 @@ export default function Encyclopedia() {
   };
 
   const remove = async (name: string) => {
+    setTimeout(() => notifyAppSync('encyclopedia'), 1500);
     if (!window.confirm(`¿Eliminar ${name}?`)) return;
     const { error } = await supabase.storage.from(BUCKET).remove([name]);
     if (error) toast({ title: 'No se pudo eliminar', variant: 'destructive' });

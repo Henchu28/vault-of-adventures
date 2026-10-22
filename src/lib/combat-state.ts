@@ -25,4 +25,10 @@ export function restoreCombat(value: unknown): CombatSnapshot {
     addedGroupIds: Array.isArray(data.addedGroupIds) ? data.addedGroupIds : [],
   };
 }
-export const createStatusRows = () => Array.from({ length: 8 }, (_, index) => ({ slot: index + 1, name: '', max_hp: 0, current_hp: 0, notes: '' }));
+export const createStatusRows = () => Array.from({ length: 8 }, (_, index) => ({ slot: index + 1, name: '', max_hp: 0, current_hp: 0, notes: '' }));/** JSON with sorted object keys, so local and database (jsonb) copies compare equal. */
+export function stableStringify(value: unknown): string {
+  const sort = (input: unknown): unknown => Array.isArray(input) ? input.map(sort)
+    : input && typeof input === 'object' ? Object.fromEntries(Object.keys(input as object).sort().map(key => [key, sort((input as Record<string, unknown>)[key])]))
+    : input;
+  return JSON.stringify(sort(value));
+}

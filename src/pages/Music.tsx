@@ -1,3 +1,4 @@
+import { useAppSync } from '@/hooks/useAppSync';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -48,6 +49,7 @@ export default function Music() {
   const [selectedSongIds, setSelectedSongIds] = useState<number[]>([]);
 
   useEffect(() => { fetchSongs(); fetchPlaylists(); }, []);
+  useAppSync(['songs', 'playlists', 'playlist_songs'], () => { fetchSongs(); fetchPlaylists(); });
 
   const fetchSongs = async () => {
     setLoading(true);

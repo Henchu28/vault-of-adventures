@@ -1,3 +1,4 @@
+import { useAppSync } from '@/hooks/useAppSync';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,6 +45,7 @@ export default function Campaigns() {
   const [activeSessionIndex, setActiveSessionIndex] = useState<number | null>(null);
 
   useEffect(() => { fetchCampaigns(); }, []);
+  useAppSync(['campaigns'], () => fetchCampaigns());
 
   const fetchCampaigns = async () => {
     setLoading(true);

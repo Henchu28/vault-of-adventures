@@ -262,7 +262,7 @@ const Index = () => {
           <CardContent><Button asChild className="w-full"><Link to="/status">Status Actual</Link></Button></CardContent>
         </Card>
 
-        {profile?.role === 'master' && (
+        {true && (
           <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden border-2 border-accent/20">
             <div 
               className="h-48 bg-cover bg-center relative"

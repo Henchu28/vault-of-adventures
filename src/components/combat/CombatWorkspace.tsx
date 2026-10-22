@@ -1,18 +1,20 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CombatSnapshot, emptyCombat, restoreCombat } from '@/lib/combat-state';
+import { CombatSnapshot, emptyCombat, restoreCombat, stableStringify } from '@/lib/combat-state';
+import { useAppSync } from '@/hooks/useAppSync';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Save, FolderOpen, X, Trash2 } from 'lucide-react';
+import { Plus, Save, FolderOpen, X, Trash2, Radio } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-type CombatTab = { id: string; name: string; savedId?: string; state: CombatSnapshot };
+// `mount` changes force the tracker to re-initialise; `synced` is the last state known to be on the server.
+type CombatTab = { id: string; mount: string; name: string; savedId?: string; synced?: string; state: CombatSnapshot };
 type SavedCombat = { id: string; name: string; state: unknown };
 export function CombatWorkspace({ renderTracker }: { renderTracker: (state: CombatSnapshot, onChange: (state: CombatSnapshot) => void) => ReactNode }) {
-  const [tabs, setTabs] = useState<CombatTab[]>([{ id: 'initial', name: 'Combate 1', state: emptyCombat() }]);
+  const [tabs, setTabs] = useState<CombatTab[]>([{ id: 'initial', mount: 'initial', name: 'Combate 1', state: emptyCombat() }]);
   const [active, setActive] = useState('initial');
   const [saved, setSaved] = useState<SavedCombat[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -20,36 +22,75 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
+  const tabsRef = useRef(tabs);
+  tabsRef.current = tabs;
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const current = tabs.find(tab => tab.id === active);
+
   const loadSaved = async () => {
     const { data, error } = await supabase.from('saved_combats').select('*').order('name');
-    if (error) toast({ title: 'No se pudieron cargar los combates', description: error.message, variant: 'destructive' });
-    else setSaved(data || []);
+    if (error) { toast({ title: 'No se pudieron cargar los combates', description: error.message, variant: 'destructive' }); return; }
+    const list = data || [];
+    setSaved(list);
+    // Apply other masters' live changes to open saved tabs that have no pending local edits.
+    setTabs(previous => previous.map(tab => {
+      if (!tab.savedId || timers.current.has(tab.id)) return tab;
+      const remote = list.find(item => item.id === tab.savedId);
+      if (!remote) return { ...tab, savedId: undefined, synced: undefined };
+      const state = restoreCombat(remote.state);
+      const text = stableStringify(state);
+      if (text === tab.synced && remote.name === tab.name) return tab;
+      return { ...tab, name: remote.name, state, synced: text, mount: crypto.randomUUID() };
+    }));
   };
   useEffect(() => { void loadSaved(); }, []);
+  useAppSync(['saved_combats'], () => void loadSaved());
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const onTrackerChange = (tabId: string, state: CombatSnapshot) => {
+    setTabs(previous => previous.map(item => item.id === tabId ? { ...item, state } : item));
+    const tab = tabsRef.current.find(item => item.id === tabId);
+    if (!tab?.savedId) return;
+    const text = stableStringify(state);
+    if (text === tab.synced) return;
+    clearTimeout(timers.current.get(tabId));
+    timers.current.set(tabId, setTimeout(async () => {
+      timers.current.delete(tabId);
+      const latest = tabsRef.current.find(item => item.id === tabId);
+      if (!latest?.savedId) return;
+      const body = stableStringify(latest.state);
+      setTabs(previous => previous.map(item => item.id === tabId ? { ...item, synced: body } : item));
+      const { error } = await supabase.from('saved_combats').update({ state: JSON.parse(body) }).eq('id', latest.savedId);
+      if (error) toast({ title: 'No se pudo sincronizar el combate', description: error.message, variant: 'destructive' });
+    }, 600));
+  };
+
   const save = async () => {
     if (!current || !name.trim()) return;
     setBusy(true);
-    const payload = { name: name.trim(), state: JSON.parse(JSON.stringify(current.state)) };
+    const body = stableStringify(current.state);
+    const payload = { name: name.trim(), state: JSON.parse(body) };
     const result = current.savedId
       ? await supabase.from('saved_combats').update(payload).eq('id', current.savedId).select().single()
       : await supabase.from('saved_combats').insert(payload).select().single();
     setBusy(false);
     if (result.error) { toast({ title: 'No se pudo guardar', description: result.error.message, variant: 'destructive' }); return; }
-    setTabs(previous => previous.map(tab => tab.id === current.id ? { ...tab, name: payload.name, savedId: result.data.id } : tab));
+    setTabs(previous => previous.map(tab => tab.id === current.id ? { ...tab, name: payload.name, savedId: result.data.id, synced: body } : tab));
     setSaveOpen(false);
-    toast({ title: 'Combate guardado' });
+    toast({ title: 'Combate guardado', description: 'Los cambios de esta pestaña se compartirán en vivo.' });
     void loadSaved();
   };
   return <section className="min-w-0 space-y-3">
     <div className="flex flex-wrap items-center gap-2">
       <Tabs value={active} onValueChange={setActive} className="min-w-0 max-w-full">
         <TabsList className="h-auto flex-wrap justify-start">
-          {tabs.map(tab => <TabsTrigger key={tab.id} value={tab.id}>{tab.name}</TabsTrigger>)}
+          {tabs.map(tab => <TabsTrigger key={tab.id} value={tab.id} className="gap-1">
+            {tab.savedId && <Radio className="h-3 w-3 text-primary" aria-label="En vivo" />}{tab.name}
+          </TabsTrigger>)}
         </TabsList>
       </Tabs>
       <Button size="icon" variant="outline" title="Nuevo combate" aria-label="Nuevo combate" onClick={() => {
-        const id = crypto.randomUUID(); setTabs(previous => [...previous, { id, name: `Combate ${previous.length + 1}`, state: emptyCombat() }]); setActive(id);
+        const id = crypto.randomUUID(); setTabs(previous => [...previous, { id, mount: id, name: `Combate ${previous.length + 1}`, state: emptyCombat() }]); setActive(id);
       }}><Plus className="h-4 w-4" /></Button>
       <Button size="icon" variant="ghost" title="Cerrar pestaña" aria-label="Cerrar pestaña" disabled={tabs.length === 1} onClick={() => {
         if (!window.confirm('¿Cerrar esta pestaña? Los cambios no guardados se perderán.')) return;
@@ -60,8 +101,8 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
       <Button size="sm" variant="outline" onClick={() => { setName(current?.name || ''); setSaveOpen(true); }}><Save className="mr-2 h-4 w-4" />Guardar combate</Button>
       <Button size="sm" variant="outline" onClick={() => { void loadSaved(); setLoadOpen(true); }}><FolderOpen className="mr-2 h-4 w-4" />Combates guardados</Button>
     </div>
-    {tabs.map(tab => <div key={tab.id} hidden={active !== tab.id}>
-      {renderTracker(tab.state, state => setTabs(previous => previous.map(item => item.id === tab.id ? { ...item, state } : item)))}
+    {tabs.map(tab => <div key={tab.mount} hidden={active !== tab.id}>
+      {renderTracker(tab.state, state => onTrackerChange(tab.id, state))}
     </div>)}
     <Dialog open={saveOpen} onOpenChange={setSaveOpen}><DialogContent>
       <DialogHeader><DialogTitle>Guardar combate</DialogTitle></DialogHeader>
@@ -74,10 +115,10 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
         {saved.length === 0 && <p className="text-muted-foreground">Sin combates guardados.</p>}
         {saved.map(combat => <div key={combat.id} className="flex gap-2">
           <Button variant="outline" className="flex-1 justify-start min-w-0" onClick={() => {
-            // Always mount a fresh tab id so the tracker re-initialises from the saved snapshot.
             const existing = tabs.find(tab => tab.savedId === combat.id);
-            const id = crypto.randomUUID();
-            const loaded = { id, name: combat.name, savedId: combat.id, state: restoreCombat(combat.state) };
+            const state = restoreCombat(combat.state);
+            const id = existing?.id || crypto.randomUUID();
+            const loaded: CombatTab = { id, mount: crypto.randomUUID(), name: combat.name, savedId: combat.id, synced: stableStringify(state), state };
             setTabs(previous => existing ? previous.map(tab => tab.id === existing.id ? loaded : tab) : [...previous, loaded]);
             setActive(id);
             setLoadOpen(false);
@@ -86,7 +127,7 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
             if (!window.confirm(`¿Eliminar ${combat.name}?`)) return;
             const { error } = await supabase.from('saved_combats').delete().eq('id', combat.id);
             if (error) toast({ title: 'No se pudo eliminar', variant: 'destructive' });
-            else { setTabs(previous => previous.map(tab => tab.savedId === combat.id ? { ...tab, savedId: undefined } : tab)); void loadSaved(); }
+            else { setTabs(previous => previous.map(tab => tab.savedId === combat.id ? { ...tab, savedId: undefined, synced: undefined } : tab)); void loadSaved(); }
           }}><Trash2 className="h-4 w-4" /></Button>
         </div>)}
       </div>

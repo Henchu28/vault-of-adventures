@@ -1,6 +1,8 @@
+import { useAppSync } from '@/hooks/useAppSync';
 import { useEffect, useState } from 'react';
 import { rollFormulaOnce, Combatant, CombatSnapshot, Alignment } from '@/lib/combat-state';
 import { CombatWorkspace } from '@/components/combat/CombatWorkspace';
+import { PlayerCombatView } from '@/components/combat/PlayerCombatView';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -20,7 +22,7 @@ import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, B
 import { Slider } from '@/components/ui/slider';
 
 
-const ALIGNMENT_LABELS: Record<Alignment, string> = {
+export const ALIGNMENT_LABELS: Record<Alignment, string> = {
   player: 'Jugador',
   monster: 'Monstruo',
   npc: 'NPC',
@@ -28,7 +30,7 @@ const ALIGNMENT_LABELS: Record<Alignment, string> = {
   other: 'Otro',
 };
 
-const ALIGNMENT_BORDER: Record<Alignment, string> = {
+export const ALIGNMENT_BORDER: Record<Alignment, string> = {
   player: 'border-l-green-500 border-r-green-500',
   monster: 'border-l-red-500 border-r-red-500',
   npc: 'border-l-yellow-500 border-r-yellow-500',
@@ -879,9 +881,11 @@ export default function Combat() {
   };
 
   useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [user?.id]);
+  useAppSync(['saved_attacks', 'saved_creatures', 'saved_creature_groups', 'saved_creature_group_members'], () => loadAll());
 
   if (loading) return null;
-  if (!isMaster || !user) return <div className="text-center py-12 text-muted-foreground">Solo el Máster puede ver Combat.</div>;
+  if (!user) return null;
+  if (!isMaster) return <PlayerCombatView />;
 
   const saveAttack = async (name: string, formula: string) => {
     const { error } = await sb.from('saved_attacks').insert({ user_id: user.id, name, formula });

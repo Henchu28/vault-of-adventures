@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Save, RefreshCw } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { createStatusRows } from '@/lib/combat-state';
+import { useAppSync } from '@/hooks/useAppSync';
 
 type StatusRow = ReturnType<typeof createStatusRows>[number];
 export default function CurrentStatus() {
@@ -22,6 +23,11 @@ export default function CurrentStatus() {
     setLoading(false);
   };
   useEffect(() => { void load(); }, []);
+  // Live refresh from other users, keeping this user's unsaved edits on top.
+  useAppSync(['current_status'], async () => {
+    const { data } = await supabase.from('current_status').select('*').order('slot');
+    if (data) setRows(data.map(row => ({ ...row, ...pending.current.get(row.slot) })));
+  });
   const update = (slot: number, patch: Partial<StatusRow>) => {
     pending.current.set(slot, { ...pending.current.get(slot), ...patch });
     setRows(previous => previous.map(row => row.slot === slot ? { ...row, ...patch } : row));
