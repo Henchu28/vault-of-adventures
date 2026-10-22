@@ -26,6 +26,7 @@ export function CampaignInventory({ campaignId }: CampaignInventoryProps) {
   const [newNotes, setNewNotes] = useState('');
 
   useEffect(() => { fetchItems(); }, [campaignId]);
+  useAppSync(['campaign_inventory'], () => fetchItems());
 
   const fetchItems = async () => {
     setLoading(true);

@@ -1,3 +1,4 @@
+import { useAppSync } from '@/hooks/useAppSync';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -105,6 +106,7 @@ export default function Characters() {
   const [npcForm, setNpcForm] = useState(defaultNpcForm);
 
   useEffect(() => { fetchData(); }, [isMaster]);
+  useAppSync(['characters', 'npcs', 'campaigns'], () => fetchData());
 
   const fetchData = async () => {
     setLoading(true);

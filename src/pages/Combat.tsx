@@ -1,3 +1,4 @@
+import { useAppSync } from '@/hooks/useAppSync';
 import { useEffect, useState } from 'react';
 import { rollFormulaOnce, Combatant, CombatSnapshot, Alignment } from '@/lib/combat-state';
 import { CombatWorkspace } from '@/components/combat/CombatWorkspace';
@@ -879,6 +880,7 @@ export default function Combat() {
   };
 
   useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [user?.id]);
+  useAppSync(['saved_attacks', 'saved_creatures', 'saved_creature_groups', 'saved_creature_group_members'], () => loadAll());
 
   if (loading) return null;
   if (!isMaster || !user) return <div className="text-center py-12 text-muted-foreground">Solo el Máster puede ver Combat.</div>;

@@ -1,3 +1,4 @@
+import { useAppSync } from '@/hooks/useAppSync';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,6 +55,7 @@ export function CampaignRumors({ campaignId }: { campaignId: number }) {
   };
 
   useEffect(() => { fetchRumors(); }, [campaignId]);
+  useAppSync(['campaign_rumors'], () => fetchRumors());
 
   const handleAdd = async () => {
     if (!newText.trim() || !user) return;

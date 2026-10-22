@@ -25,6 +25,7 @@ export default function Encyclopedia() {
     setLoading(false);
   };
   useEffect(() => { void load(); }, []);
+  useAppSync(['documents'], () => void load());
 
   const upload = async (list: FileList | null) => {
     if (!list?.length) return;

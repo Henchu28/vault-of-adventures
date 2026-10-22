@@ -1,3 +1,4 @@
+import { useAppSync } from '@/hooks/useAppSync';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,6 +55,7 @@ export function GalleryMaps() {
   const [formImage, setFormImage] = useState<File | null>(null);
 
   useEffect(() => { fetchData(); }, []);
+  useAppSync(['maps', 'campaigns'], () => fetchData());
 
   const fetchData = async () => {
     setLoading(true);
