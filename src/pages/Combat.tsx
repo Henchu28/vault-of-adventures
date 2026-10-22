@@ -22,7 +22,7 @@ import { Heart, Shield, Plus, Trash2, ChevronLeft, ChevronRight, Save, Swords, B
 import { Slider } from '@/components/ui/slider';
 
 
-const ALIGNMENT_LABELS: Record<Alignment, string> = {
+export const ALIGNMENT_LABELS: Record<Alignment, string> = {
   player: 'Jugador',
   monster: 'Monstruo',
   npc: 'NPC',
@@ -30,7 +30,7 @@ const ALIGNMENT_LABELS: Record<Alignment, string> = {
   other: 'Otro',
 };
 
-const ALIGNMENT_BORDER: Record<Alignment, string> = {
+export const ALIGNMENT_BORDER: Record<Alignment, string> = {
   player: 'border-l-green-500 border-r-green-500',
   monster: 'border-l-red-500 border-r-red-500',
   npc: 'border-l-yellow-500 border-r-yellow-500',
