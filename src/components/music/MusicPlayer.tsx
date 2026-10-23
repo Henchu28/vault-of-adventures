@@ -157,7 +157,7 @@ export default function MusicPlayer({ songs, currentSongId, onSongChange, onStop
   if (!currentSong) return null;
 
   return (
-    <div className="bg-card border rounded-lg p-4 space-y-3">
+    <div className="p-2 space-y-1">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium truncate flex-1">{currentSong.name}</p>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {

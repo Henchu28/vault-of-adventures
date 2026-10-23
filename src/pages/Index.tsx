@@ -280,7 +280,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <CardDescription className="mb-4">
-                Calculator and combat tracker
+                Combates en vivo
               </CardDescription>
               <Link to="/combat">
                 <Button className="w-full bg-primary hover:bg-primary/90">Open Combat</Button>

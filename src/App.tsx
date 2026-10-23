@@ -47,7 +47,7 @@ const App = () => (
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="*" element={
-                <ProtectedRoute><Layout><KeepAlivePages pages={pages} fallback={<NotFound />} /></Layout></ProtectedRoute>
+                <ProtectedRoute><Layout><KeepAlivePages pages={pages} fallback={<NotFound />} fresh={['/ficha']} /></Layout></ProtectedRoute>
               } />
             </Routes>
           </BrowserRouter>
