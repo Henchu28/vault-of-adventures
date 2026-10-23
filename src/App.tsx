@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
+import { KeepAlivePages } from "@/components/KeepAlivePages";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Characters from "./pages/Characters";
@@ -22,6 +23,19 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const pages = {
+  '/': <Index />,
+  '/characters': <Characters />,
+  '/campaigns': <Campaigns />,
+  '/gallery': <Gallery />,
+  '/music': <Music />,
+  '/encyclopedia': <Encyclopedia />,
+  '/settings': <Settings />,
+  '/ficha': <Ficha />,
+  '/combat': <Combat />,
+  '/status': <CurrentStatus />,
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -32,37 +46,9 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={
-                <ProtectedRoute><Layout><Index /></Layout></ProtectedRoute>
+              <Route path="*" element={
+                <ProtectedRoute><Layout><KeepAlivePages pages={pages} fallback={<NotFound />} /></Layout></ProtectedRoute>
               } />
-              <Route path="/characters" element={
-                <ProtectedRoute><Layout><Characters /></Layout></ProtectedRoute>
-              } />
-              <Route path="/campaigns" element={
-                <ProtectedRoute><Layout><Campaigns /></Layout></ProtectedRoute>
-              } />
-              <Route path="/gallery" element={
-                <ProtectedRoute><Layout><Gallery /></Layout></ProtectedRoute>
-              } />
-              <Route path="/music" element={
-                <ProtectedRoute><Layout><Music /></Layout></ProtectedRoute>
-              } />
-              <Route path="/encyclopedia" element={
-                <ProtectedRoute><Layout><Encyclopedia /></Layout></ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>
-              } />
-              <Route path="/ficha" element={
-                <ProtectedRoute><Layout><Ficha /></Layout></ProtectedRoute>
-              } />
-              <Route path="/combat" element={
-                <ProtectedRoute requireMaster={true}><Layout><Combat /></Layout></ProtectedRoute>
-              } />
-              <Route path="/status" element={
-                <ProtectedRoute><Layout><CurrentStatus /></Layout></ProtectedRoute>
-              } />
-              <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </ThemeProvider>
