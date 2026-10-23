@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SHARED_REFRESH_MS } from '@/lib/live-sync';
 
 // One shared broadcast channel; database triggers send { table } on every change.
 type Listener = (table: string) => void;
@@ -32,7 +33,21 @@ export function useAppSync(tables: string[], onChange: () => void, delay = 300) 
       timer = setTimeout(() => callback.current(), delay);
     };
     listeners.add(listener);
-    return () => { clearTimeout(timer); listeners.delete(listener); };
+    // Broadcast delivery can be interrupted; polling also covers missed changes and reconnects.
+    const refresh = setInterval(() => callback.current(), SHARED_REFRESH_MS);
+    const onFocus = () => callback.current();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(refresh);
+      window.removeEventListener('focus', onFocus);
+      listeners.delete(listener);
+      if (listeners.size === 0 && channel) {
+        const oldChannel = channel;
+        channel = null;
+        void supabase.removeChannel(oldChannel);
+      }
+    };
   }, [key, delay]);
 }
 

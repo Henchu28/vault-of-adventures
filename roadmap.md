@@ -1,4 +1,6 @@
 # Requested updates
+- [ ] Fix automatic Combat refresh for players, including monsters without HP/AC.
+- [ ] Autosave Status Actual while retaining manual Save.
 - [x] Share master notes, documents, attacks, creatures and groups across masters.
 - [x] Add calculator multiplication/division and rearrange keys.
 - [x] Add independent combat tabs with shared saved combats.

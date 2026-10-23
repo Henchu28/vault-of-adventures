@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CombatSnapshot, emptyCombat, restoreCombat, stableStringify } from '@/lib/combat-state';
 import { useAppSync } from '@/hooks/useAppSync';
+import { AUTOSAVE_DELAY_MS, shouldShareCombat } from '@/lib/live-sync';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +26,7 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const writing = useRef(new Set<string>());
   const current = tabs.find(tab => tab.id === active);
 
   const loadSaved = async () => {
@@ -34,7 +36,7 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
     setSaved(list);
     // Apply other masters' live changes to open saved tabs that have no pending local edits.
     setTabs(previous => previous.map(tab => {
-      if (!tab.savedId || timers.current.has(tab.id)) return tab;
+      if (!tab.savedId || timers.current.has(tab.id) || writing.current.has(tab.id) || stableStringify(tab.state) !== tab.synced) return tab;
       const remote = list.find(item => item.id === tab.savedId);
       if (!remote) return { ...tab, savedId: undefined, synced: undefined };
       const state = restoreCombat(remote.state);
@@ -47,35 +49,63 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
   useAppSync(['saved_combats'], () => void loadSaved());
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  const onTrackerChange = (tabId: string, state: CombatSnapshot) => {
-    setTabs(previous => previous.map(item => item.id === tabId ? { ...item, state } : item));
-    const tab = tabsRef.current.find(item => item.id === tabId);
-    if (!tab?.savedId) return;
-    const text = stableStringify(state);
-    if (text === tab.synced) return;
+  const updateTabs = (update: (previous: CombatTab[]) => CombatTab[]) => {
+    tabsRef.current = update(tabsRef.current);
+    setTabs(tabsRef.current);
+  };
+
+  const scheduleSave = (tabId: string) => {
     clearTimeout(timers.current.get(tabId));
     timers.current.set(tabId, setTimeout(async () => {
       timers.current.delete(tabId);
+      if (writing.current.has(tabId)) { scheduleSave(tabId); return; }
       const latest = tabsRef.current.find(item => item.id === tabId);
-      if (!latest?.savedId) return;
+      if (!latest || !shouldShareCombat(latest.state, latest.savedId)) return;
       const body = stableStringify(latest.state);
-      setTabs(previous => previous.map(item => item.id === tabId ? { ...item, synced: body } : item));
-      const { error } = await supabase.from('saved_combats').update({ state: JSON.parse(body) }).eq('id', latest.savedId);
-      if (error) toast({ title: 'No se pudo sincronizar el combate', description: error.message, variant: 'destructive' });
-    }, 600));
+      if (body === latest.synced) return;
+      writing.current.add(tabId);
+      const payload = { state: JSON.parse(body) };
+      const result = latest.savedId
+        ? await supabase.from('saved_combats').update(payload).eq('id', latest.savedId).select('id').single()
+        : await supabase.from('saved_combats').insert({ ...payload, name: latest.name }).select('id').single();
+      writing.current.delete(tabId);
+      if (result.error) {
+        toast({ title: 'No se pudo sincronizar el combate', description: result.error.message, variant: 'destructive' });
+        scheduleSave(tabId);
+        return;
+      }
+      updateTabs(previous => previous.map(item => item.id === tabId ? { ...item, savedId: result.data.id, synced: body } : item));
+      const updated = tabsRef.current.find(item => item.id === tabId);
+      if (updated && stableStringify(updated.state) !== body) scheduleSave(tabId);
+    }, AUTOSAVE_DELAY_MS));
+  };
+
+  const onTrackerChange = (tabId: string, state: CombatSnapshot) => {
+    updateTabs(previous => previous.map(item => item.id === tabId ? { ...item, state } : item));
+    const tab = tabsRef.current.find(item => item.id === tabId);
+    if (!tab || !shouldShareCombat(state, tab.savedId) || stableStringify(state) === tab.synced) return;
+    scheduleSave(tabId);
   };
 
   const save = async () => {
     if (!current || !name.trim()) return;
+    if (writing.current.has(current.id)) return;
+    clearTimeout(timers.current.get(current.id));
+    timers.current.delete(current.id);
+    writing.current.add(current.id);
     setBusy(true);
-    const body = stableStringify(current.state);
+    const latest = tabsRef.current.find(item => item.id === current.id);
+    const body = stableStringify(latest?.state || current.state);
     const payload = { name: name.trim(), state: JSON.parse(body) };
     const result = current.savedId
       ? await supabase.from('saved_combats').update(payload).eq('id', current.savedId).select().single()
       : await supabase.from('saved_combats').insert(payload).select().single();
     setBusy(false);
+    writing.current.delete(current.id);
     if (result.error) { toast({ title: 'No se pudo guardar', description: result.error.message, variant: 'destructive' }); return; }
-    setTabs(previous => previous.map(tab => tab.id === current.id ? { ...tab, name: payload.name, savedId: result.data.id, synced: body } : tab));
+    updateTabs(previous => previous.map(tab => tab.id === current.id ? { ...tab, name: payload.name, savedId: result.data.id, synced: body } : tab));
+    const updated = tabsRef.current.find(item => item.id === current.id);
+    if (updated && stableStringify(updated.state) !== body) scheduleSave(current.id);
     setSaveOpen(false);
     toast({ title: 'Combate guardado', description: 'Los cambios de esta pestaña se compartirán en vivo.' });
     void loadSaved();
@@ -94,6 +124,8 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
       }}><Plus className="h-4 w-4" /></Button>
       <Button size="icon" variant="ghost" title="Cerrar pestaña" aria-label="Cerrar pestaña" disabled={tabs.length === 1} onClick={() => {
         if (!window.confirm('¿Cerrar esta pestaña? Los cambios no guardados se perderán.')) return;
+        if (writing.current.has(active)) return;
+        clearTimeout(timers.current.get(active)); timers.current.delete(active);
         const remaining = tabs.filter(tab => tab.id !== active); setTabs(remaining); setActive(remaining[0]?.id || 'initial');
       }}><X className="h-4 w-4" /></Button>
     </div>

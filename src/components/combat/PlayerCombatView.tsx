@@ -4,6 +4,7 @@ import { useAppSync } from '@/hooks/useAppSync';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Heart, Shield } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 type PublicCombatant = { id: string; name: string; alignment: string; initRoll: number | null; hp?: number; maxHp?: number; ac?: number };
 type PublicCombat = { id: string; name: string; state: { round?: number; turnIdx?: number; combatants?: PublicCombatant[] } };
@@ -20,8 +21,14 @@ export function PlayerCombatView() {
   const [combats, setCombats] = useState<PublicCombat[]>([]);
   const [active, setActive] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   const load = async () => {
-    const { data } = await (supabase as any).rpc('get_combats_public');
+    const { data, error } = await supabase.rpc('get_combats_public');
+    if (error) {
+      setLoading(false);
+      toast({ title: 'No se pudieron actualizar los combates', description: error.message, variant: 'destructive' });
+      return;
+    }
     const list: PublicCombat[] = data || [];
     setCombats(list);
     setActive(previous => list.some(c => c.id === previous) ? previous : list[0]?.id || '');
