@@ -27,3 +27,13 @@ describe('Combat rules', () => {
     expect(createStatusRows().map(row => row.slot)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
 });
+import { stableStringify } from './combat-state';
+describe('Live combat sync', () => {
+  test('key order does not change the comparison with the database copy', () => {
+    expect(stableStringify({ round: 2, turnIdx: 1, combatants: [{ name: 'Auryn', hp: 5 }] }))
+      .toBe(stableStringify({ combatants: [{ hp: 5, name: 'Auryn' }], turnIdx: 1, round: 2 }));
+  });
+  test('a different HP is detected as a change', () => {
+    expect(stableStringify({ hp: 5 })).not.toBe(stableStringify({ hp: 4 }));
+  });
+});

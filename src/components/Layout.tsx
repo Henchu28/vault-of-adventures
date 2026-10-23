@@ -132,7 +132,7 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8">{children}</main>
+      <main className="container mx-auto px-4 pt-8 pb-40">{children}</main>
     </div>
   );
 }

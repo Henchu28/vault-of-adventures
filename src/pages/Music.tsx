@@ -1,5 +1,6 @@
 import { useAppSync } from '@/hooks/useAppSync';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -263,13 +264,14 @@ export default function Music() {
       </div>
 
       {/* Now Playing */}
-      {playingSongId && (
-        <MusicPlayer
+      {playingSongId && createPortal(
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur shadow-lg"><div className="container mx-auto max-w-3xl px-2 py-1"><MusicPlayer
           songs={playerSongs.length > 0 ? playerSongs : songs}
           currentSongId={playingSongId}
           onSongChange={setPlayingSongId}
           onStop={() => { setPlayingSongId(null); setActivePlaylistId(null); }}
-        />
+        /></div></div>,
+        document.body
       )}
 
       <Tabs defaultValue="songs">
