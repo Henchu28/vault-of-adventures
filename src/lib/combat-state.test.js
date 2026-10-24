@@ -1,7 +1,15 @@
 import { describe, expect, test } from 'bun:test';
-import { createStatusRows, emptyCombat, restoreCombat, rollFormulaOnce } from './combat-state';
+import { createStatusRows, emptyCombat, restoreCombat, rollFormulaOnce, replaceActiveCombat } from './combat-state';
 
 describe('Combat rules', () => {
+  test('loading a saved combat replaces the active tab without adding or switching tabs', () => {
+    const tabs = [{ id: 'first', savedId: 'saved', state: emptyCombat() }, { id: 'active', state: emptyCombat() }];
+    const state = { ...emptyCombat(), round: 5 };
+    const loaded = replaceActiveCombat(tabs, 'active', { id: 'active', savedId: 'saved', state });
+    expect(loaded).toHaveLength(2);
+    expect(loaded[0]).toBe(tabs[0]);
+    expect(loaded[1]).toEqual({ id: 'active', savedId: 'saved', state });
+  });
   test('multiplication and division have precedence', () => {
     expect(rollFormulaOnce('2+3*4/2')?.total).toBe(8);
   });
