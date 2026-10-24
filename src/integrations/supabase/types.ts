@@ -262,24 +262,30 @@ export type Database = {
       maps: {
         Row: {
           campaing_id: number | null
+          continent: number | null
           description: string | null
           id: number
           image_url: string | null
           name: string
+          region: number | null
         }
         Insert: {
           campaing_id?: number | null
+          continent?: number | null
           description?: string | null
           id?: number
           image_url?: string | null
           name: string
+          region?: number | null
         }
         Update: {
           campaing_id?: number | null
+          continent?: number | null
           description?: string | null
           id?: number
           image_url?: string | null
           name?: string
+          region?: number | null
         }
         Relationships: [
           {

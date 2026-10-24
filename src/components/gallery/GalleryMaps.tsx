@@ -1,7 +1,7 @@
 import { useAppSync } from '@/hooks/useAppSync';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { CONTINENTS, UNKNOWN_LOCATION, mapLocation, regionsForContinent } from '@/lib/map-geography';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,21 +16,15 @@ interface MapData {
   id: number;
   name: string;
   description: string;
-  campaing_id: number;
+  continent: number | null;
+  region: number | null;
   image_url: string | null;
 }
 
-interface Campaign {
-  id: number;
-  name: string;
-}
-
 export function GalleryMaps() {
-  const { isMaster } = useAuth();
   const { toast } = useToast();
 
   const [maps, setMaps] = useState<MapData[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -51,24 +45,21 @@ export function GalleryMaps() {
 
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
-  const [formCampaignId, setFormCampaignId] = useState('');
+  const [formContinent, setFormContinent] = useState(UNKNOWN_LOCATION);
+  const [formRegion, setFormRegion] = useState(UNKNOWN_LOCATION);
   const [formImage, setFormImage] = useState<File | null>(null);
 
   useEffect(() => { fetchData(); }, []);
-  useAppSync(['maps', 'campaigns'], () => fetchData());
+  useAppSync(['maps'], () => fetchData());
 
   const fetchData = async () => {
     setLoading(true);
-    const [mapsResult, campaignsResult] = await Promise.all([
-      supabase.from('maps').select('*').order('name', { ascending: true }),
-      supabase.from('campaigns').select('id, name'),
-    ]);
+    const mapsResult = await supabase.from('maps').select('*').order('name', { ascending: true });
     if (mapsResult.data) setMaps(mapsResult.data);
-    if (campaignsResult.data) setCampaigns(campaignsResult.data);
     setLoading(false);
   };
 
-  const resetForm = () => { setFormName(''); setFormDescription(''); setFormCampaignId(''); setFormImage(null); };
+  const resetForm = () => { setFormName(''); setFormDescription(''); setFormContinent(UNKNOWN_LOCATION); setFormRegion(UNKNOWN_LOCATION); setFormImage(null); };
 
   const uploadImage = async (file: File): Promise<string | null> => {
     const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
@@ -83,7 +74,7 @@ export function GalleryMaps() {
     setUploading(true);
     let imageUrl: string | null = null;
     if (formImage) { imageUrl = await uploadImage(formImage); if (!imageUrl) { setUploading(false); return; } }
-    const { error } = await supabase.from('maps').insert({ name: formName.trim(), description: formDescription.trim() || null, campaing_id: formCampaignId && formCampaignId !== 'none' ? Number(formCampaignId) : null, image_url: imageUrl });
+    const { error } = await supabase.from('maps').insert({ name: formName.trim(), description: formDescription.trim() || null, ...mapLocation(formContinent, formRegion), campaing_id: null, image_url: imageUrl });
     if (error) toast({ title: "Error", description: "No se pudo crear el mapa", variant: "destructive" });
     else { toast({ title: "¡Éxito!", description: "Mapa creado" }); resetForm(); setIsDialogOpen(false); fetchData(); }
     setUploading(false);
@@ -97,7 +88,7 @@ export function GalleryMaps() {
       if (imageUrl) { const path = imageUrl.split('/maps/').pop(); if (path) await supabase.storage.from('maps').remove([path]); }
       imageUrl = await uploadImage(formImage); if (!imageUrl) { setUploading(false); return; }
     }
-    const { error } = await supabase.from('maps').update({ name: formName.trim(), description: formDescription.trim() || null, campaing_id: formCampaignId && formCampaignId !== 'none' ? Number(formCampaignId) : null, image_url: imageUrl }).eq('id', editingMap.id);
+    const { error } = await supabase.from('maps').update({ name: formName.trim(), description: formDescription.trim() || null, ...mapLocation(formContinent, formRegion), campaing_id: null, image_url: imageUrl }).eq('id', editingMap.id);
     if (error) toast({ title: "Error", description: "No se pudo actualizar", variant: "destructive" });
     else { toast({ title: "¡Éxito!", description: "Mapa actualizado" }); resetForm(); setEditingMap(null); fetchData(); }
     setUploading(false);
@@ -110,7 +101,7 @@ export function GalleryMaps() {
     else { toast({ title: "¡Éxito!", description: "Mapa eliminado" }); fetchData(); }
   };
 
-  const openEdit = (map: MapData) => { setEditingMap(map); setFormName(map.name); setFormDescription(map.description || ''); setFormCampaignId(map.campaing_id ? String(map.campaing_id) : ''); setFormImage(null); };
+  const openEdit = (map: MapData) => { setEditingMap(map); setFormName(map.name); setFormDescription(map.description || ''); setFormContinent(map.continent ? String(map.continent) : UNKNOWN_LOCATION); setFormRegion(map.continent && map.region ? String(map.region) : UNKNOWN_LOCATION); setFormImage(null); };
 
   // Drawing functions
   const redrawCanvas = useCallback(() => {
@@ -195,12 +186,22 @@ export function GalleryMaps() {
       <div><Label>Nombre *</Label><Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Nombre del mapa" /></div>
       <div><Label>Descripción</Label><Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} placeholder="Descripción del mapa" /></div>
       <div>
-        <Label>Campaña</Label>
-        <Select value={formCampaignId} onValueChange={setFormCampaignId}>
-          <SelectTrigger><SelectValue placeholder="Seleccionar campaña" /></SelectTrigger>
+        <Label htmlFor="map-continent">Continente</Label>
+        <Select value={formContinent} onValueChange={value => { setFormContinent(value); setFormRegion(UNKNOWN_LOCATION); }}>
+          <SelectTrigger id="map-continent"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Unknown</SelectItem>
-            {campaigns.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+            <SelectItem value={UNKNOWN_LOCATION}>Unknown</SelectItem>
+            {CONTINENTS.map(c => <SelectItem key={c} value={String(c)}>Continente {c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor="map-region">Región</Label>
+        <Select value={formRegion} onValueChange={setFormRegion} disabled={formContinent === UNKNOWN_LOCATION}>
+          <SelectTrigger id="map-region"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={UNKNOWN_LOCATION}>Unknown</SelectItem>
+            {regionsForContinent(formContinent).map(region => <SelectItem key={region} value={String(region)}>Región {region}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -296,6 +297,7 @@ export function GalleryMaps() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-2">{map.description || 'Sin descripción'}</p>
+              <p className="text-sm text-muted-foreground mb-2">{map.continent ? `Continente ${map.continent}` : 'Unknown'} · {map.continent && map.region ? `Región ${map.region}` : 'Unknown'}</p>
               {map.image_url ? (
                 <img src={map.image_url} alt={map.name} className="w-full h-48 object-cover rounded-lg" />
               ) : (

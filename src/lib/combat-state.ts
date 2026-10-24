@@ -7,6 +7,9 @@ export type Combatant = {
 };
 export type CombatSnapshot = { combatants: Combatant[]; turnIdx: number; round: number; addedGroupIds: string[] };
 export const emptyCombat = (): CombatSnapshot => ({ combatants: [], turnIdx: 0, round: 1, addedGroupIds: [] });
+export function replaceActiveCombat<T extends { id: string }>(tabs: T[], activeId: string, loaded: T): T[] {
+  return tabs.map(tab => tab.id === activeId ? { ...loaded, id: activeId } : tab);
+}
 export function rollFormulaOnce(formula: string): { parts: string[]; total: number } | null {
   if (formula.length > 500 || /\d{5,}d/i.test(formula)) return null;
   try {

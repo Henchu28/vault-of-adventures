@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CombatSnapshot, emptyCombat, restoreCombat, stableStringify } from '@/lib/combat-state';
+import { CombatSnapshot, emptyCombat, restoreCombat, stableStringify, replaceActiveCombat } from '@/lib/combat-state';
 import { useAppSync } from '@/hooks/useAppSync';
 import { AUTOSAVE_DELAY_MS, shouldShareCombat } from '@/lib/live-sync';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
   const [saved, setSaved] = useState<SavedCombat[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
+  const [deleting, setDeleting] = useState<SavedCombat | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
@@ -148,24 +149,33 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
         {saved.length === 0 && <p className="text-muted-foreground">Sin combates guardados.</p>}
         {saved.map(combat => <div key={combat.id} className="flex gap-2">
           <Button variant="outline" className="flex-1 justify-start min-w-0" onClick={() => {
-            const existing = tabs.find(tab => tab.savedId === combat.id);
-            if (existing && writing.current.has(existing.id)) return;
-            if (existing) { clearTimeout(timers.current.get(existing.id)); timers.current.delete(existing.id); }
+            if (!current || writing.current.has(current.id)) return;
+            clearTimeout(timers.current.get(current.id)); timers.current.delete(current.id);
             const state = restoreCombat(combat.state);
-            const id = existing?.id || crypto.randomUUID();
+            const id = current.id;
             const loaded: CombatTab = { id, mount: crypto.randomUUID(), name: combat.name, savedId: combat.id, synced: stableStringify(state), state };
-            setTabs(previous => existing ? previous.map(tab => tab.id === existing.id ? loaded : tab) : [...previous, loaded]);
-            setActive(id);
+            updateTabs(previous => replaceActiveCombat(previous, id, loaded));
             setLoadOpen(false);
           }}><span className="truncate">{combat.name}</span></Button>
-          <Button variant="ghost" size="icon" aria-label={`Eliminar ${combat.name}`} onClick={async () => {
-            if (!window.confirm(`¿Eliminar ${combat.name}?`)) return;
-            const { error } = await supabase.from('saved_combats').delete().eq('id', combat.id);
-            if (error) toast({ title: 'No se pudo eliminar', variant: 'destructive' });
-            else { setTabs(previous => previous.map(tab => tab.savedId === combat.id ? { ...tab, savedId: undefined, synced: undefined } : tab)); void loadSaved(); }
-          }}><Trash2 className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" aria-label={`Eliminar ${combat.name}`} onClick={() => setDeleting(combat)}><Trash2 className="h-4 w-4" /></Button>
         </div>)}
       </div>
+    </DialogContent></Dialog>
+    <Dialog open={!!deleting} onOpenChange={open => { if (!open) setDeleting(null); }}><DialogContent>
+      <DialogHeader><DialogTitle className="break-words">¿Eliminar {deleting?.name}?</DialogTitle></DialogHeader>
+      <DialogFooter>
+        <Button variant="outline" onClick={() => setDeleting(null)}>Cancelar</Button>
+        <Button variant="destructive" disabled={busy} onClick={async () => {
+          if (!deleting) return;
+          setBusy(true);
+          const { error } = await supabase.from('saved_combats').delete().eq('id', deleting.id);
+          setBusy(false);
+          if (error) { toast({ title: 'No se pudo eliminar', variant: 'destructive' }); return; }
+          updateTabs(previous => previous.map(tab => tab.savedId === deleting.id ? { ...tab, savedId: undefined, synced: undefined } : tab));
+          setDeleting(null);
+          void loadSaved();
+        }}>Eliminar</Button>
+      </DialogFooter>
     </DialogContent></Dialog>
   </section>;
 }
