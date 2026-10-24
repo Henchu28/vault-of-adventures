@@ -29,7 +29,12 @@ export function PlayerCombatView() {
       toast({ title: 'No se pudieron actualizar los combates', description: error.message, variant: 'destructive' });
       return;
     }
-    const list: PublicCombat[] = data || [];
+    const list: PublicCombat[] = (data || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      state: item.state && typeof item.state === 'object' && !Array.isArray(item.state)
+        ? item.state as PublicCombat['state'] : {},
+    }));
     setCombats(list);
     setActive(previous => list.some(c => c.id === previous) ? previous : list[0]?.id || '');
     setLoading(false);

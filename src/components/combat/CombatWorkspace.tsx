@@ -97,8 +97,9 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
     const latest = tabsRef.current.find(item => item.id === current.id);
     const body = stableStringify(latest?.state || current.state);
     const payload = { name: name.trim(), state: JSON.parse(body) };
-    const result = current.savedId
-      ? await supabase.from('saved_combats').update(payload).eq('id', current.savedId).select().single()
+    const savedId = latest?.savedId || current.savedId;
+    const result = savedId
+      ? await supabase.from('saved_combats').update(payload).eq('id', savedId).select().single()
       : await supabase.from('saved_combats').insert(payload).select().single();
     setBusy(false);
     writing.current.delete(current.id);
@@ -148,6 +149,8 @@ export function CombatWorkspace({ renderTracker }: { renderTracker: (state: Comb
         {saved.map(combat => <div key={combat.id} className="flex gap-2">
           <Button variant="outline" className="flex-1 justify-start min-w-0" onClick={() => {
             const existing = tabs.find(tab => tab.savedId === combat.id);
+            if (existing && writing.current.has(existing.id)) return;
+            if (existing) { clearTimeout(timers.current.get(existing.id)); timers.current.delete(existing.id); }
             const state = restoreCombat(combat.state);
             const id = existing?.id || crypto.randomUUID();
             const loaded: CombatTab = { id, mount: crypto.randomUUID(), name: combat.name, savedId: combat.id, synced: stableStringify(state), state };
