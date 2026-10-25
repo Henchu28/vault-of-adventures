@@ -16,10 +16,31 @@ export default function Settings() {
   const { toast } = useToast();
   const [displayName, setDisplayName] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [characterName, setCharacterName] = useState('');
+  const [savingCharName, setSavingCharName] = useState(false);
 
   useEffect(() => {
     setDisplayName(profile?.display_name || '');
   }, [profile?.display_name]);
+
+  useEffect(() => {
+    setCharacterName(profile?.character_name || '');
+  }, [profile?.character_name]);
+
+  const handleSaveCharacterName = async () => {
+    if (!user) return;
+    setSavingCharName(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ character_name: characterName.trim() || null })
+      .eq('user_id', user.id);
+    setSavingCharName(false);
+    if (error) {
+      toast({ title: 'Error', description: 'No se pudo actualizar el nombre de personaje', variant: 'destructive' });
+    } else {
+      toast({ title: '¡Éxito!', description: 'Nombre de personaje actualizado. Recarga para verlo en todas partes.' });
+    }
+  };
 
   const handleSaveName = async () => {
     if (!user || !displayName.trim()) return;
@@ -39,6 +60,24 @@ export default function Settings() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold">Configuración</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Nombre de Personaje</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Label htmlFor="character-name">Nombre de Personaje</Label>
+          <Input
+            id="character-name"
+            value={characterName}
+            onChange={(e) => setCharacterName(e.target.value)}
+            placeholder="El nombre de tu personaje"
+          />
+          <Button onClick={handleSaveCharacterName} disabled={savingCharName || characterName.trim() === (profile?.character_name || '')}>
+            {savingCharName ? 'Guardando...' : 'Guardar nombre de personaje'}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

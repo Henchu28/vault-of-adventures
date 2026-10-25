@@ -10,6 +10,7 @@ interface Profile {
   user_id: string;
   role: UserRole;
   display_name: string | null;
+  character_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -20,7 +21,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, displayName: string, role: UserRole) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, displayName: string, role: UserRole, characterName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isMaster: boolean;
 }
@@ -106,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, displayName: string, role: UserRole) => {
+  const signUp = async (email: string, password: string, displayName: string, role: UserRole, characterName: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -116,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: redirectUrl,
         data: {
           display_name: displayName,
+          character_name: characterName,
           role: role,
         },
       },

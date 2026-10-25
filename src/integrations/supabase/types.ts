@@ -329,6 +329,7 @@ export type Database = {
       }
       npcs: {
         Row: {
+          known_by: string[]
           alignment: string
           apariencia: string | null
           Arquetipo: string | null
@@ -348,6 +349,7 @@ export type Database = {
           region: number | null
         }
         Insert: {
+          known_by?: string[]
           alignment?: string
           apariencia?: string | null
           Arquetipo?: string | null
@@ -367,6 +369,7 @@ export type Database = {
           region?: number | null
         }
         Update: {
+          known_by?: string[]
           alignment?: string
           apariencia?: string | null
           Arquetipo?: string | null
@@ -475,6 +478,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          character_name: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -483,6 +487,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          character_name?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -491,6 +496,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          character_name?: string | null
           created_at?: string
           display_name?: string | null
           id?: string

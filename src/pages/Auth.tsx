@@ -23,6 +23,7 @@ export default function Auth() {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [characterName, setCharacterName] = useState('');
   const [role, setRole] = useState<'master' | 'player'>('player');
 
   if (loading) {
@@ -47,7 +48,7 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await signUp(signupEmail, signupPassword, displayName, role);
+    await signUp(signupEmail, signupPassword, displayName, role, characterName.trim());
     setIsLoading(false);
   };
 
@@ -127,6 +128,15 @@ export default function Auth() {
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-character-name">Nombre de Personaje</Label>
+                  <Input
+                    id="signup-character-name"
+                    value={characterName}
+                    onChange={(e) => setCharacterName(e.target.value)}
+                    required={role === 'player'}
                   />
                 </div>
                 <div className="space-y-2">

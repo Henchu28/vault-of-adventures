@@ -2,6 +2,7 @@ import { useAppSync } from '@/hooks/useAppSync';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,7 @@ interface NPCPublic {
 }
 
 interface NPCFull extends NPCPublic {
+  known_by: string[] | null;
   description: string | null;
   historia: string | null;
   apariencia: string | null;
@@ -58,7 +60,7 @@ interface NPCFull extends NPCPublic {
 }
 
 interface Campaign { id: number; name: string; }
-interface ProfileLite { user_id: string; display_name: string | null; }
+interface ProfileLite { user_id: string; display_name: string | null; role: 'master' | 'player'; character_name: string | null; }
 
 const ARQUETIPOS = ['Emisor', 'Modulador', 'Canalizador', 'Invocador', 'Focalizador', 'Compuesto'];
 const ELEMENTOS = ['Fuego', 'Hielo', 'Tierra', 'Planta', 'Luz', 'Oscuridad', 'Viento', 'Electricidad', 'Espiritual', 'Compuesto'];
@@ -102,6 +104,7 @@ export default function Characters() {
     name: '', Raza: '', Arquetipo: '', Elemento: 'Unknown', Esencia: 'Unknown',
     Organización: 'Unknown', Edad: 0, Estado: 'Unknown', continent: UNKNOWN_LOCATION, region: UNKNOWN_LOCATION,
     alignment: 'Unknown', description: '', historia: '', apariencia: '', personalidad: '',
+    known_by: [] as string[],
   };
 
   const [charForm, setCharForm] = useState(defaultCharForm);
@@ -117,7 +120,7 @@ export default function Characters() {
       supabase.rpc('get_npcs_public'),
       supabase.from('organizations').select('org_name'),
       supabase.from('campaigns').select('id, name'),
-      isMaster ? supabase.from('profiles').select('user_id, display_name') : Promise.resolve({ data: [] as ProfileLite[] }),
+      isMaster ? supabase.from('profiles').select('user_id, display_name, role, character_name') : Promise.resolve({ data: [] as ProfileLite[] }),
     ]);
     if (charsRes.data) setCharacters(charsRes.data as CharacterPublic[]);
     if (npcsRes.data) setNPCs(npcsRes.data as NPCPublic[]);
@@ -162,6 +165,7 @@ export default function Characters() {
     historia: npcForm.historia || '',
     apariencia: npcForm.apariencia || '',
     personalidad: npcForm.personalidad || '',
+    known_by: npcForm.known_by,
   });
 
   const handleCreateCharacter = async () => {
@@ -235,6 +239,7 @@ export default function Characters() {
       alignment: n.alignment || 'Unknown',
       description: n.description || '', historia: n.historia || '',
       apariencia: n.apariencia || '', personalidad: n.personalidad || '',
+      known_by: n.known_by || [],
     });
   };
 
@@ -455,6 +460,24 @@ export default function Characters() {
             {regionsForContinent(form.continent).map(r => <SelectItem key={r} value={String(r)}>Región {r}</SelectItem>)}
           </SelectContent>
         </Select>
+      </div>
+      <div className="col-span-2">
+        <Label>Conocido por</Label>
+        <div className="space-y-1 rounded-md border p-2 max-h-40 overflow-y-auto">
+          {profiles.filter(p => p.role === 'player').map(p => (
+            <label key={p.user_id} className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={form.known_by.includes(p.user_id)}
+                onCheckedChange={(checked) => setForm({
+                  ...form,
+                  known_by: checked ? [...form.known_by, p.user_id] : form.known_by.filter(id => id !== p.user_id),
+                })}
+              />
+              {p.character_name || `${p.display_name || p.user_id.slice(0, 8)} (sin nombre de personaje)`}
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">Solo estos personajes verán a este NPC.</p>
       </div>
       <div className="col-span-2">
         <Label>Descripción</Label>
@@ -690,12 +713,7 @@ export default function Characters() {
                 <CardContent>
                   <div className="space-y-2 text-sm">
                     <p><span className="font-medium">Raza:</span> {character.Raza}</p>
-                    <p><span className="font-medium">Arquetipo:</span> {character.Arquetipo}</p>
-                    <p><span className="font-medium">Elemento:</span> {character.Elemento}</p>
-                    <p><span className="font-medium">Esencia:</span> {character.Esencia}</p>
-                    <p><span className="font-medium">Edad:</span> {character.Edad}</p>
                     <p><span className="font-medium">Organización:</span> {character.Organización}</p>
-                    <p><span className="font-medium">Estado:</span> {character.Estado}</p>
                     {isMaster && character.user_id && (
                       <p className="text-xs text-muted-foreground">Jugador: {profileLabel(character.user_id)}</p>
                     )}
@@ -727,15 +745,7 @@ export default function Characters() {
                 <CardContent>
                   <div className="space-y-2 text-sm">
                     <p><span className="font-medium">Raza:</span> {npc.Raza}</p>
-                    <p><span className="font-medium">Arquetipo:</span> {npc.Arquetipo}</p>
-                    <p><span className="font-medium">Elemento:</span> {npc.Elemento}</p>
-                    <p><span className="font-medium">Esencia:</span> {npc.Esencia}</p>
-                    <p><span className="font-medium">Edad:</span> {npc.Edad}</p>
                     <p><span className="font-medium">Organización:</span> {npc.Organización}</p>
-                    <p><span className="font-medium">Alignment:</span> {npc.alignment}</p>
-                    <p><span className="font-medium">Estado:</span> {npc.Estado}</p>
-                    <p><span className="font-medium">Continente:</span> {npc.continent ? `Continente ${npc.continent}` : 'Unknown'}</p>
-                    <p><span className="font-medium">Región:</span> {npc.region ? `Región ${npc.region}` : 'Unknown'}</p>
                   </div>
                 </CardContent>
               </Card>
