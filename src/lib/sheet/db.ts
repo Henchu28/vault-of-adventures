@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sheetDb as supabase } from "@/lib/sheet/db";
+import { supabase as client } from "@/integrations/supabase/client";
 
 /** Untyped client: the sheet_* tables are not in the generated Supabase types. */
-export const sheetDb = supabase as unknown as SupabaseClient;
+export const sheetDb = client as unknown as SupabaseClient;
