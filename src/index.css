@@ -113,3 +113,21 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Ficha (character sheet) surfaces, themed with the app tokens */
+@layer components {
+  .sheet-panel {
+    background: hsl(var(--card) / 0.85);
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    box-shadow: 0 4px 14px -6px hsl(var(--foreground) / 0.25);
+  }
+
+  .rune-chip {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+}

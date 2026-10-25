@@ -279,12 +279,12 @@ export default function Characters() {
   const profileLabel = (uid: string | null | undefined) => {
     if (!uid) return null;
     const p = profiles.find(p => p.user_id === uid);
-    return p?.display_name || uid.slice(0, 8);
+    return p?.character_name || p?.display_name || uid.slice(0, 8);
   };
 
   const charFormJSX = (form: typeof defaultCharForm, setForm: (f: typeof defaultCharForm) => void, onSubmit: () => void, isEdit: boolean) => (
-    <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-1">
-      <div className="col-span-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="sm:col-span-2">
         <Label>Nombre *</Label>
         <Input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} placeholder="Nombre del personaje" />
       </div>
@@ -353,35 +353,35 @@ export default function Characters() {
           <SelectTrigger><SelectValue placeholder="Sin jugador" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Sin jugador</SelectItem>
-            {profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.display_name || p.user_id.slice(0, 8)}</SelectItem>)}
+            {profiles.filter(p => p.role === 'player').map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.character_name || `${p.display_name || p.user_id.slice(0, 8)} (sin nombre de personaje)`}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Label>Descripción (privada, solo Máster)</Label>
         <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} rows={2} />
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Label>Historia</Label>
         <Textarea value={form.historia} onChange={(e) => setForm({...form, historia: e.target.value})} rows={3} />
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Label>Apariencia</Label>
         <Textarea value={form.apariencia} onChange={(e) => setForm({...form, apariencia: e.target.value})} rows={3} />
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Label>Personalidad</Label>
         <Textarea value={form.personalidad} onChange={(e) => setForm({...form, personalidad: e.target.value})} rows={3} />
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Button onClick={onSubmit} className="w-full">{isEdit ? 'Guardar Cambios' : 'Crear Personaje'}</Button>
       </div>
     </div>
   );
 
   const npcFormJSX = (form: typeof defaultNpcForm, setForm: (f: typeof defaultNpcForm) => void, onSubmit: () => void, isEdit: boolean) => (
-    <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-1">
-      <div className="col-span-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="sm:col-span-2">
         <Label>Nombre *</Label>
         <Input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} placeholder="Nombre del NPC" />
       </div>
@@ -461,7 +461,7 @@ export default function Characters() {
           </SelectContent>
         </Select>
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Label>Conocido por</Label>
         <div className="space-y-1 rounded-md border p-2 max-h-40 overflow-y-auto">
           {profiles.filter(p => p.role === 'player').map(p => (
@@ -479,23 +479,23 @@ export default function Characters() {
         </div>
         <p className="text-xs text-muted-foreground mt-1">Solo estos personajes verán a este NPC.</p>
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Label>Descripción</Label>
         <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} rows={2} />
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Label>Historia</Label>
         <Textarea value={form.historia} onChange={(e) => setForm({...form, historia: e.target.value})} rows={3} />
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Label>Apariencia</Label>
         <Textarea value={form.apariencia} onChange={(e) => setForm({...form, apariencia: e.target.value})} rows={3} />
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Label>Personalidad</Label>
         <Textarea value={form.personalidad} onChange={(e) => setForm({...form, personalidad: e.target.value})} rows={3} />
       </div>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Button onClick={onSubmit} className="w-full">{isEdit ? 'Guardar Cambios' : 'Crear NPC'}</Button>
       </div>
     </div>
@@ -503,20 +503,20 @@ export default function Characters() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="space-y-3">
         <h1 className="text-3xl font-bold">Characters & NPCs</h1>
         {isMaster && (
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             <Dialog open={isCharacterDialogOpen} onOpenChange={(open) => { setIsCharacterDialogOpen(open); if (!open) resetCharForm(); }}>
               <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Add Character</Button></DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl w-[calc(100%-1rem)] p-4 sm:p-6">
                 <DialogHeader><DialogTitle>Nuevo Personaje</DialogTitle></DialogHeader>
                 {charFormJSX(charForm, setCharForm, handleCreateCharacter, false)}
               </DialogContent>
             </Dialog>
             <Dialog open={isNPCDialogOpen} onOpenChange={(open) => { setIsNPCDialogOpen(open); if (!open) resetNpcForm(); }}>
               <DialogTrigger asChild><Button variant="outline"><Plus className="w-4 h-4 mr-2" />Add NPC</Button></DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl w-[calc(100%-1rem)] p-4 sm:p-6">
                 <DialogHeader><DialogTitle>Nuevo NPC</DialogTitle></DialogHeader>
                 {npcFormJSX(npcForm, setNpcForm, handleCreateNPC, false)}
               </DialogContent>
@@ -526,14 +526,14 @@ export default function Characters() {
       </div>
 
       <Dialog open={!!editingCharacter} onOpenChange={(open) => { if (!open) { setEditingCharacter(null); resetCharForm(); } }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl w-[calc(100%-1rem)] p-4 sm:p-6">
           <DialogHeader><DialogTitle>Editar Personaje</DialogTitle></DialogHeader>
           {charFormJSX(charForm, setCharForm, handleEditCharacter, true)}
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!editingNPC} onOpenChange={(open) => { if (!open) { setEditingNPC(null); resetNpcForm(); } }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl w-[calc(100%-1rem)] p-4 sm:p-6">
           <DialogHeader><DialogTitle>Editar NPC</DialogTitle></DialogHeader>
           {npcFormJSX(npcForm, setNpcForm, handleEditNPC, true)}
         </DialogContent>
@@ -696,22 +696,22 @@ export default function Characters() {
         </TabsList>
 
         <TabsContent value="characters">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
             {filteredCharacters.map((character) => (
               <Card key={character.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openCharacterDetail(character)}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="flex flex-wrap items-center justify-between gap-1 text-base sm:text-2xl break-words">
                     <span>{character.name}</span>
                     {isMaster && (
-                      <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex" onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="sm" onClick={() => openEditCharacter(character)}><Edit className="w-4 h-4" /></Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDeleteCharacter(character.id)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                     <p><span className="font-medium">Raza:</span> {character.Raza}</p>
                     <p><span className="font-medium">Organización:</span> {character.Organización}</p>
                     {isMaster && character.user_id && (
@@ -728,22 +728,22 @@ export default function Characters() {
         </TabsContent>
 
         <TabsContent value="npcs">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
             {filteredNPCs.map((npc) => (
               <Card key={npc.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openNPCDetail(npc)}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="flex flex-wrap items-center justify-between gap-1 text-base sm:text-2xl break-words">
                     <span>{npc.name}</span>
                     {isMaster && (
-                      <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex" onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="sm" onClick={() => openEditNPC(npc)}><Edit className="w-4 h-4" /></Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDeleteNPC(npc.id)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                     <p><span className="font-medium">Raza:</span> {npc.Raza}</p>
                     <p><span className="font-medium">Organización:</span> {npc.Organización}</p>
                   </div>
