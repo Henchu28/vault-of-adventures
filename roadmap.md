@@ -1,4 +1,5 @@
 # Requested updates
+- [ ] Replace NPC campaign association with Continente and Región using map geography rules.
 - [x] Load saved combats into the active tab and show names when deleting; rule test and simulated UI checks pass.
 - [x] Replace map campaign classification with four continents and dependent regions, including Unknown; migration applied, rule tests and simulated UI checks pass.
 - [x] Fix automatic Combat refresh for players, including monsters without HP/AC; verified using simulated responses and hosted projection logic.
