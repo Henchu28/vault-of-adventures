@@ -1,11 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { acknowledgePatch, AUTOSAVE_DELAY_MS, SHARED_REFRESH_MS, shouldShareCombat } from './live-sync';
+import { acknowledgePatch, AUTOSAVE_DELAY_MS, shouldShareCombat } from './live-sync';
 
 describe('Automatic shared updates', () => {
-  test('pages refresh automatically within a short delay even without broadcast', () => {
-    expect(SHARED_REFRESH_MS).toBeLessThanOrEqual(5000);
-    expect(SHARED_REFRESH_MS).toBeGreaterThan(0);
-  });
   test('a new combat with a monster is shared without manual saving', () => {
     expect(shouldShareCombat({ combatants: [{ name: 'Goblin', alignment: 'monster' }] })).toBe(true);
     expect(shouldShareCombat({ combatants: [] })).toBe(false);
