@@ -332,6 +332,7 @@ export type Database = {
           alignment: string
           apariencia: string | null
           Arquetipo: string | null
+          continent: number | null
           description: string | null
           Edad: number
           Elemento: string | null
@@ -344,11 +345,13 @@ export type Database = {
           Organización: string | null
           personalidad: string | null
           Raza: string | null
+          region: number | null
         }
         Insert: {
           alignment?: string
           apariencia?: string | null
           Arquetipo?: string | null
+          continent?: number | null
           description?: string | null
           Edad?: number
           Elemento?: string | null
@@ -361,11 +364,13 @@ export type Database = {
           Organización?: string | null
           personalidad?: string | null
           Raza?: string | null
+          region?: number | null
         }
         Update: {
           alignment?: string
           apariencia?: string | null
           Arquetipo?: string | null
+          continent?: number | null
           description?: string | null
           Edad?: number
           Elemento?: string | null
@@ -378,6 +383,7 @@ export type Database = {
           Organización?: string | null
           personalidad?: string | null
           Raza?: string | null
+          region?: number | null
         }
         Relationships: [
           {
@@ -697,6 +703,7 @@ export type Database = {
         Returns: {
           alignment: string
           Arquetipo: string
+          continent: number
           Edad: number
           Elemento: string
           Esencia: string
@@ -706,6 +713,7 @@ export type Database = {
           name: string
           Organización: string
           Raza: string
+          region: number
         }[]
       }
       has_role: {
