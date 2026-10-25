@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 export JAVA_HOME="${JAVA_HOME:-C:/Android/jdk-21.0.12.1+1}" ANDROID_HOME="${ANDROID_HOME:-C:/Android/Sdk}"
 REPO="Henchu28/vault-of-adventures-apk"
-VERSION=$(grep -oP 'versionName "\K[^"]+' android/app/build.gradle)
+VERSION=$(grep versionName android/app/build.gradle | head -1 | cut -d'"' -f2)
 npm run build
 npx cap sync android
 (cd android && ./gradlew.bat assembleRelease -Pandroid.overridePathCheck=true)
