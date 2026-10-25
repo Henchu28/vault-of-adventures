@@ -1,6 +1,6 @@
 # Requested updates
-- [ ] Load saved combats into the active tab and show names when deleting.
-- [ ] Replace map campaign classification with four continents and dependent regions, including Unknown.
+- [x] Load saved combats into the active tab and show names when deleting; rule test and simulated UI checks pass.
+- [x] Replace map campaign classification with four continents and dependent regions, including Unknown; migration applied, rule tests and simulated UI checks pass.
 - [x] Fix automatic Combat refresh for players, including monsters without HP/AC; verified using simulated responses and hosted projection logic.
 - [x] Autosave Status Actual while retaining manual Save; verified with simulated writes and 15 passing rule tests.
 - [x] Share master notes, documents, attacks, creatures and groups across masters.
