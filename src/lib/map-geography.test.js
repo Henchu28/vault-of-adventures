@@ -20,3 +20,7 @@ test('region twelve is only valid on continent four', () => {
   expect(mapLocation('3', '12')).toEqual({ continent: 3, region: null });
   expect(mapLocation('4', '12')).toEqual({ continent: 4, region: 12 });
 });
+test('NPC geography saves the same continent and region fields as maps', () => {
+  expect(mapLocation('2', '9')).toEqual({ continent: 2, region: 9 });
+  expect(mapLocation('unknown', '12')).toEqual({ continent: null, region: null });
+});

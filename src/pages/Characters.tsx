@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit, Trash2, Search, User, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { CONTINENTS, UNKNOWN_LOCATION, mapLocation, regionsForContinent } from '@/lib/map-geography';
 
 interface CharacterPublic {
   id: number;
@@ -44,7 +45,8 @@ interface NPCPublic {
   Organización: string | null;
   Edad: number;
   Estado: string | null;
-  ID_Campaña: number | null;
+  continent: number | null;
+  region: number | null;
   alignment: string;
 }
 
@@ -98,7 +100,7 @@ export default function Characters() {
   };
   const defaultNpcForm = {
     name: '', Raza: '', Arquetipo: '', Elemento: 'Unknown', Esencia: 'Unknown',
-    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: '',
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', continent: UNKNOWN_LOCATION, region: UNKNOWN_LOCATION,
     alignment: 'Unknown', description: '', historia: '', apariencia: '', personalidad: '',
   };
 
@@ -154,7 +156,7 @@ export default function Characters() {
     Organización: npcForm.Organización || 'Unknown',
     Edad: npcForm.Edad || 0,
     Estado: npcForm.Estado || 'Unknown',
-    ID_Campaña: npcForm.ID_Campaña && npcForm.ID_Campaña !== 'none' ? Number(npcForm.ID_Campaña) : null,
+    ...mapLocation(npcForm.continent, npcForm.region),
     alignment: npcForm.alignment || 'Unknown',
     description: npcForm.description || '',
     historia: npcForm.historia || '',
@@ -228,7 +230,8 @@ export default function Characters() {
       name: n.name, Raza: n.Raza || '', Arquetipo: n.Arquetipo || '',
       Elemento: n.Elemento || 'Unknown', Esencia: n.Esencia || 'Unknown',
       Organización: n.Organización || 'Unknown', Edad: n.Edad || 0,
-      Estado: n.Estado || 'Unknown', ID_Campaña: n.ID_Campaña ? String(n.ID_Campaña) : '',
+      Estado: n.Estado || 'Unknown', continent: n.continent ? String(n.continent) : UNKNOWN_LOCATION,
+      region: n.region ? String(n.region) : UNKNOWN_LOCATION,
       alignment: n.alignment || 'Unknown',
       description: n.description || '', historia: n.historia || '',
       apariencia: n.apariencia || '', personalidad: n.personalidad || '',
@@ -434,12 +437,22 @@ export default function Characters() {
         <Input value={form.Estado} onChange={(e) => setForm({...form, Estado: e.target.value})} />
       </div>
       <div>
-        <Label>Campaña</Label>
-        <Select value={form.ID_Campaña || 'none'} onValueChange={(v) => setForm({...form, ID_Campaña: v})}>
-          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+        <Label htmlFor="npc-continent">Continente</Label>
+        <Select value={form.continent} onValueChange={(continent) => setForm({...form, continent, region: UNKNOWN_LOCATION})}>
+          <SelectTrigger id="npc-continent"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Unknown</SelectItem>
-            {campaigns.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+            <SelectItem value={UNKNOWN_LOCATION}>Unknown</SelectItem>
+            {CONTINENTS.map(c => <SelectItem key={c} value={String(c)}>Continente {c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor="npc-region">Región</Label>
+        <Select value={form.region} disabled={form.continent === UNKNOWN_LOCATION} onValueChange={(region) => setForm({...form, region})}>
+          <SelectTrigger id="npc-region"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={UNKNOWN_LOCATION}>Unknown</SelectItem>
+            {regionsForContinent(form.continent).map(r => <SelectItem key={r} value={String(r)}>Región {r}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -574,6 +587,8 @@ export default function Characters() {
                   <div><span className="font-semibold">Organización:</span> {viewingNPC.Organización || '—'}</div>
                   <div><span className="font-semibold">Alignment:</span> {viewingNPC.alignment || '—'}</div>
                   <div><span className="font-semibold">Estado:</span> {viewingNPC.Estado || '—'}</div>
+                  <div><span className="font-semibold">Continente:</span> {viewingNPC.continent ? `Continente ${viewingNPC.continent}` : 'Unknown'}</div>
+                  <div><span className="font-semibold">Región:</span> {viewingNPC.region ? `Región ${viewingNPC.region}` : 'Unknown'}</div>
                 </div>
                 {viewingNPCFull ? (
                   <div className="space-y-4">
@@ -719,6 +734,8 @@ export default function Characters() {
                     <p><span className="font-medium">Organización:</span> {npc.Organización}</p>
                     <p><span className="font-medium">Alignment:</span> {npc.alignment}</p>
                     <p><span className="font-medium">Estado:</span> {npc.Estado}</p>
+                    <p><span className="font-medium">Continente:</span> {npc.continent ? `Continente ${npc.continent}` : 'Unknown'}</p>
+                    <p><span className="font-medium">Región:</span> {npc.region ? `Región ${npc.region}` : 'Unknown'}</p>
                   </div>
                 </CardContent>
               </Card>
