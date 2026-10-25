@@ -1,4 +1,3 @@
-export const SHARED_REFRESH_MS = 3000;
 export const AUTOSAVE_DELAY_MS = 600;
 
 /** A successful write may only acknowledge the exact field values it sent. */
