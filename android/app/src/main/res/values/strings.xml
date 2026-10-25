@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Vault of Adventures</string>
+    <string name="title_activity_main">Vault of Adventures</string>
+    <string name="package_name">com.henchu28.vaultofadventures</string>
+    <string name="custom_url_scheme">com.henchu28.vaultofadventures</string>
+</resources>
