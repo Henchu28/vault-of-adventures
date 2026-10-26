@@ -25,7 +25,8 @@ interface CharacterPublic {
   Organización: string;
   Edad: number | null;
   Estado: string | null;
-  ID_Campaña: number | null;
+  continent: number | null;
+  region: number | null;
   user_id: string | null;
 }
 
@@ -59,7 +60,6 @@ interface NPCFull extends NPCPublic {
   personalidad: string | null;
 }
 
-interface Campaign { id: number; name: string; }
 interface ProfileLite { user_id: string; display_name: string | null; role: 'master' | 'player'; character_name: string | null; }
 
 const ARQUETIPOS = ['Emisor', 'Modulador', 'Canalizador', 'Invocador', 'Focalizador', 'Compuesto'];
@@ -79,7 +79,6 @@ export default function Characters() {
   const [filterEssence, setFilterEssence] = useState('all');
   const [filterOrg, setFilterOrg] = useState('all');
   const [organizations, setOrganizations] = useState<string[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [profiles, setProfiles] = useState<ProfileLite[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -96,7 +95,7 @@ export default function Characters() {
 
   const defaultCharForm = {
     name: '', Raza: '', Arquetipo: '', Elemento: 'Unknown', Esencia: 'Unknown',
-    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', ID_Campaña: '',
+    Organización: 'Unknown', Edad: 0, Estado: 'Unknown', continent: UNKNOWN_LOCATION, region: UNKNOWN_LOCATION,
     description: '', historia: '', apariencia: '', personalidad: '',
     user_id: '' as string,
   };
@@ -111,21 +110,19 @@ export default function Characters() {
   const [npcForm, setNpcForm] = useState(defaultNpcForm);
 
   useEffect(() => { fetchData(); }, [isMaster]);
-  useAppSync(['characters', 'npcs', 'campaigns'], () => fetchData());
+  useAppSync(['characters', 'npcs'], () => fetchData());
 
   const fetchData = async () => {
     setLoading(true);
-    const [charsRes, npcsRes, orgsRes, campaignsRes, profilesRes] = await Promise.all([
+    const [charsRes, npcsRes, orgsRes, profilesRes] = await Promise.all([
       supabase.rpc('get_characters_public'),
       supabase.rpc('get_npcs_public'),
       supabase.from('organizations').select('org_name'),
-      supabase.from('campaigns').select('id, name'),
       isMaster ? supabase.from('profiles').select('user_id, display_name, role, character_name') : Promise.resolve({ data: [] as ProfileLite[] }),
     ]);
     if (charsRes.data) setCharacters(charsRes.data as CharacterPublic[]);
     if (npcsRes.data) setNPCs(npcsRes.data as NPCPublic[]);
     if (orgsRes.data) setOrganizations(orgsRes.data.map((o: any) => o.org_name));
-    if (campaignsRes.data) setCampaigns(campaignsRes.data);
     if (profilesRes.data) setProfiles(profilesRes.data as ProfileLite[]);
     setLoading(false);
   };
@@ -142,7 +139,7 @@ export default function Characters() {
     Organización: charForm.Organización || 'Unknown',
     Edad: charForm.Edad || 0,
     Estado: charForm.Estado || 'Unknown',
-    ID_Campaña: charForm.ID_Campaña && charForm.ID_Campaña !== 'none' ? Number(charForm.ID_Campaña) : null,
+    ...mapLocation(charForm.continent, charForm.region),
     description: charForm.description || '',
     historia: charForm.historia || '',
     apariencia: charForm.apariencia || '',
@@ -171,28 +168,28 @@ export default function Characters() {
   const handleCreateCharacter = async () => {
     if (!charForm.name.trim()) { toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" }); return; }
     const { error } = await supabase.from('characters').insert(buildCharPayload());
-    if (error) toast({ title: "Error", description: "No se pudo crear el personaje", variant: "destructive" });
+    if (error) toast({ title: "Error", description: `No se pudo crear el personaje: ${error.message}`, variant: "destructive" });
     else { toast({ title: "¡Éxito!", description: "Personaje creado" }); resetCharForm(); setIsCharacterDialogOpen(false); fetchData(); }
   };
 
   const handleEditCharacter = async () => {
     if (!editingCharacter || !charForm.name.trim()) return;
     const { error } = await supabase.from('characters').update(buildCharPayload()).eq('id', editingCharacter.id);
-    if (error) toast({ title: "Error", description: "No se pudo actualizar", variant: "destructive" });
+    if (error) toast({ title: "Error", description: `No se pudo actualizar: ${error.message}`, variant: "destructive" });
     else { toast({ title: "¡Éxito!", description: "Personaje actualizado" }); resetCharForm(); setEditingCharacter(null); fetchData(); }
   };
 
   const handleCreateNPC = async () => {
     if (!npcForm.name.trim()) { toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" }); return; }
     const { error } = await supabase.from('npcs').insert(buildNpcPayload());
-    if (error) toast({ title: "Error", description: "No se pudo crear el NPC", variant: "destructive" });
+    if (error) toast({ title: "Error", description: `No se pudo crear el NPC: ${error.message}`, variant: "destructive" });
     else { toast({ title: "¡Éxito!", description: "NPC creado" }); resetNpcForm(); setIsNPCDialogOpen(false); fetchData(); }
   };
 
   const handleEditNPC = async () => {
     if (!editingNPC || !npcForm.name.trim()) return;
     const { error } = await supabase.from('npcs').update(buildNpcPayload()).eq('id', editingNPC.id);
-    if (error) toast({ title: "Error", description: "No se pudo actualizar", variant: "destructive" });
+    if (error) toast({ title: "Error", description: `No se pudo actualizar: ${error.message}`, variant: "destructive" });
     else { toast({ title: "¡Éxito!", description: "NPC actualizado" }); resetNpcForm(); setEditingNPC(null); fetchData(); }
   };
 
@@ -219,7 +216,8 @@ export default function Characters() {
       name: c.name, Raza: c.Raza || '', Arquetipo: c.Arquetipo || '',
       Elemento: c.Elemento || 'Unknown', Esencia: c.Esencia || 'Unknown',
       Organización: c.Organización || 'Unknown', Edad: c.Edad || 0,
-      Estado: c.Estado || 'Unknown', ID_Campaña: c.ID_Campaña ? String(c.ID_Campaña) : '',
+      Estado: c.Estado || 'Unknown', continent: c.continent ? String(c.continent) : UNKNOWN_LOCATION,
+      region: c.region ? String(c.region) : UNKNOWN_LOCATION,
       description: c.description || '', historia: c.historia || '',
       apariencia: c.apariencia || '', personalidad: c.personalidad || '',
       user_id: c.user_id || '',
@@ -338,12 +336,22 @@ export default function Characters() {
         <Input value={form.Estado} onChange={(e) => setForm({...form, Estado: e.target.value})} placeholder="Ej: Vivo, Muerto..." />
       </div>
       <div>
-        <Label>Campaña</Label>
-        <Select value={form.ID_Campaña || 'none'} onValueChange={(v) => setForm({...form, ID_Campaña: v})}>
-          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+        <Label htmlFor="char-continent">Continente</Label>
+        <Select value={form.continent} onValueChange={(continent) => setForm({...form, continent, region: UNKNOWN_LOCATION})}>
+          <SelectTrigger id="char-continent"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Unknown</SelectItem>
-            {campaigns.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+            <SelectItem value={UNKNOWN_LOCATION}>Unknown</SelectItem>
+            {CONTINENTS.map(c => <SelectItem key={c} value={String(c)}>Continente {c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor="char-region">Región</Label>
+        <Select value={form.region} disabled={form.continent === UNKNOWN_LOCATION} onValueChange={(region) => setForm({...form, region})}>
+          <SelectTrigger id="char-region"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={UNKNOWN_LOCATION}>Unknown</SelectItem>
+            {regionsForContinent(form.continent).map(r => <SelectItem key={r} value={String(r)}>Región {r}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -554,6 +562,8 @@ export default function Characters() {
                   <div><span className="font-semibold">Edad:</span> {viewingCharacter.Edad ?? '—'}</div>
                   <div><span className="font-semibold">Organización:</span> {viewingCharacter.Organización || '—'}</div>
                   <div><span className="font-semibold">Estado:</span> {viewingCharacter.Estado || '—'}</div>
+                  <div><span className="font-semibold">Continente:</span> {viewingCharacter.continent ? `Continente ${viewingCharacter.continent}` : 'Unknown'}</div>
+                  <div><span className="font-semibold">Región:</span> {viewingCharacter.region ? `Región ${viewingCharacter.region}` : 'Unknown'}</div>
                   {isMaster && viewingCharacter.user_id && (
                     <div><span className="font-semibold">Jugador:</span> {profileLabel(viewingCharacter.user_id)}</div>
                   )}

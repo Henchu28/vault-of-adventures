@@ -139,6 +139,8 @@ export type Database = {
           historia: string | null
           id: number
           ID_Campaña: number | null
+          continent: number | null
+          region: number | null
           name: string
           Organización: string
           personalidad: string | null
@@ -156,6 +158,8 @@ export type Database = {
           historia?: string | null
           id?: number
           ID_Campaña?: number | null
+          continent?: number | null
+          region?: number | null
           name?: string
           Organización?: string
           personalidad?: string | null
@@ -173,6 +177,8 @@ export type Database = {
           historia?: string | null
           id?: number
           ID_Campaña?: number | null
+          continent?: number | null
+          region?: number | null
           name?: string
           Organización?: string
           personalidad?: string | null
@@ -689,6 +695,8 @@ export type Database = {
           Estado: string
           id: number
           ID_Campaña: number
+          continent: number | null
+          region: number | null
           name: string
           Organización: string
           Raza: string
