@@ -1,9 +1,10 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Home, Users, Sword, ImageIcon, Music, BookOpen, Sparkles, Menu, X, Settings, ScrollText, Swords } from 'lucide-react';
 import { D20Roller } from '@/components/D20Roller';
+import { registerPush } from '@/lib/push';
 import headerBg from '@/assets/header-bg.jpg';
 import {
   Sheet,
@@ -18,8 +19,13 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { profile, signOut, isMaster } = useAuth();
+  const { user, profile, signOut, isMaster } = useAuth();
   const location = useLocation();
+
+  // Masters get a push notification when a player writes an idea.
+  useEffect(() => {
+    if (user && isMaster) registerPush(user.id);
+  }, [user, isMaster]);
 
   const isActive = (path: string) => location.pathname === path;
 

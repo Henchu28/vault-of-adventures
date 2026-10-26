@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { sheetDb as supabase } from "@/lib/sheet/db";
 import type { ShopItem, Purchase, CharacterCurrency, ShopCategory, UserPropertyLock } from "@/lib/sheet/shop";
 import { isAnulacion } from "@/lib/sheet/shop";
+import { parsePriceFile } from "@/lib/sheet/price-file";
+import { IdeasPanel } from "./IdeasPanel";
 import { ATTRIBUTES, type AttrKey } from "@/lib/sheet/character";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Circle, Star, Lock, Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { Circle, Star, Lock, Plus, Trash2, Pencil, Check, X, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -56,6 +58,9 @@ export function ShopPanel({
     return l ? l.required_anulaciones : 0;
   };
 
+  // Per-character price (from "Subir precios") wins over the general one.
+  const costFor = (item: ShopItem) => lockByItem.get(item.id)?.cost ?? item.cost;
+
   const togglePurchase = async (item: ShopItem, current: boolean) => {
     if (current) {
       // Only properties (non-Anulación) can be removed, and only by spending 1 Anulación.
@@ -94,15 +99,16 @@ export function ShopPanel({
       toast.error(`Necesitas ${required} Anulación(es) para comprar esto`);
       return;
     }
+    const price = costFor(item);
     const balance = item.currency === "xp" ? currency.xp : currency.evo;
-    if (balance < item.cost) {
+    if (balance < price) {
       toast.error(`No tienes suficientes ${item.currency.toUpperCase()}`);
       return;
     }
 
     const { error } = await supabase.from("sheet_purchases").insert({ character_id: characterId, item_id: item.id, points: 1 });
     if (error) { toast.error("Error al comprar: " + error.message); return; }
-    const newField = item.currency === "xp" ? { xp: currency.xp - item.cost } : { evo: currency.evo - item.cost };
+    const newField = item.currency === "xp" ? { xp: currency.xp - price } : { evo: currency.evo - price };
     const { error: e2 } = await supabase.from("sheet_character_currency").update(newField).eq("character_id", characterId);
     if (e2) toast.error("Error al cobrar: " + e2.message);
 
@@ -146,16 +152,17 @@ export function ShopPanel({
   };
 
   const setLockForUser = async (item: ShopItem, required: number) => {
+    const existing = lockByItem.get(item.id);
     if (required <= 0) {
-      const existing = lockByItem.get(item.id);
-      if (existing) {
-        const { error } = await supabase.from("sheet_property_locks").delete().eq("id", existing.id);
-        if (error) { toast.error(error.message); return; }
-      }
+      if (!existing) { onChange(); return; }
+      // Keep the row while it still carries a per-character price.
+      const { error } = existing.cost == null
+        ? await supabase.from("sheet_property_locks").delete().eq("id", existing.id)
+        : await supabase.from("sheet_property_locks").update({ required_anulaciones: 0 }).eq("id", existing.id);
+      if (error) { toast.error(error.message); return; }
       onChange();
       return;
     }
-    const existing = lockByItem.get(item.id);
     if (existing) {
       const { error } = await supabase
         .from("sheet_property_locks")
@@ -169,6 +176,58 @@ export function ShopPanel({
       if (error) { toast.error(error.message); return; }
     }
     onChange();
+  };
+
+  // ---- "Subir precios": Propiedad=precio/anulacion, applied to this character ----
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const uploadPrices = async (file: File) => {
+    setUploading(true);
+    try {
+      const { rows, errors } = parsePriceFile(await file.text());
+      if (errors.length > 0) {
+        toast.error(`No se subió nada. ${errors.slice(0, 3).map((e) => `Línea ${e.line}: ${e.message}`).join(" · ")}${errors.length > 3 ? ` (+${errors.length - 3} más)` : ""}`);
+        return;
+      }
+      if (rows.length === 0) { toast.message("El archivo no tiene propiedades"); return; }
+
+      const norm = (n: string) => n.trim().toLowerCase();
+      const general = shopItems.filter((it) => it.category === "propiedad" && it.owner_character_id === null);
+      const byName = new Map(general.map((it) => [norm(it.name), it]));
+      const skipped = rows.filter((r) => norm(r.name) === norm("Anulación"));
+      const usable = rows.filter((r) => !skipped.includes(r));
+
+      const missing = usable.filter((r) => !byName.has(norm(r.name)));
+      if (missing.length > 0) {
+        const { data, error } = await supabase
+          .from("sheet_shop_items")
+          .insert(missing.map((r) => ({
+            owner_character_id: null, category: "propiedad", level: 1, name: r.name, description: "",
+            cost: r.cost, currency: "xp", locked: false, required_anulaciones: 0, attribute_key: null, sort_order: 0,
+          })))
+          .select("*");
+        if (error) { toast.error("No se pudieron crear las propiedades: " + error.message); return; }
+        for (const it of (data ?? []) as ShopItem[]) byName.set(norm(it.name), it);
+      }
+
+      const { error } = await supabase.from("sheet_property_locks").upsert(
+        usable.map((r) => ({
+          character_id: characterId,
+          item_id: byName.get(norm(r.name))!.id,
+          cost: r.cost,
+          required_anulaciones: r.required,
+        })),
+        { onConflict: "character_id,item_id" },
+      );
+      if (error) { toast.error("No se pudieron guardar los precios: " + error.message); return; }
+
+      toast.success(`${usable.length} precios aplicados (${missing.length} propiedades nuevas)${skipped.length ? " · «Anulación» ignorada" : ""}`);
+      onChange();
+    } finally {
+      setUploading(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
   };
 
   // ---- Admin helpers ----
@@ -191,105 +250,122 @@ export function ShopPanel({
     else { toast.success("Añadido"); onChange(); }
   };
 
-  // ---- Personal shop: outer = LEVEL, inner = the 3 habilidades ----
+  // ---- Personal shop: outer = the 3 habilidades, inner = one dropdown per LEVEL ----
   const personalItems = shopItems.filter(
     (it) => HAB_KEYS.includes(it.category as HabKey) && it.owner_character_id === characterId,
   );
-  const levels = Array.from(new Set(personalItems.map((it) => it.level))).sort((a, b) => a - b);
-  // If admin and no levels yet, show level 1 as a starting point
-  const displayLevels = levels.length === 0 && isAdmin ? [1] : levels;
+  const levelsFor = (hk: HabKey) => {
+    const levels = Array.from(new Set(personalItems.filter((it) => it.category === hk).map((it) => it.level))).sort((a, b) => a - b);
+    // If admin and no levels yet, show level 1 as a starting point
+    return levels.length === 0 && isAdmin ? [1] : levels;
+  };
 
   return (
     <div className="space-y-8">
       {/* PERSONAL SHOP */}
       <section>
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h2 className="text-xl font-bold">Tienda personal</h2>
-          {isAdmin && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                const next = (Math.max(0, ...displayLevels) || 0) + 1;
-                addItem({ category: "hab1", level: next, name: `Mejora nivel ${next}` });
-              }}
-            >
-              <Plus className="h-4 w-4 mr-1" /> Añadir nivel
-            </Button>
-          )}
-        </div>
+        <h2 className="text-xl font-bold mb-3">Tienda personal</h2>
 
-        {displayLevels.length === 0 && (
-          <div className="sheet-panel p-4 text-sm text-muted-foreground">
-            Aún no hay mejoras personales. {isAdmin && "Pulsa “Añadir nivel” para empezar."}
-          </div>
-        )}
-
-        <Accordion type="multiple" className="w-full space-y-2">
-          {displayLevels.map((lvl) => {
-            const canBuy = characterLevel >= lvl;
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {HAB_KEYS.map((hk) => {
+            const levels = levelsFor(hk);
             return (
-              <AccordionItem key={lvl} value={`lvl-${lvl}`} className="sheet-panel px-4 border-none">
-                <AccordionTrigger className="text-base font-bold">
-                  Nivel {lvl}
-                  {!canBuy && <span className="text-xs text-muted-foreground ml-2 font-normal">(solo lectura)</span>}
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-                    {HAB_KEYS.map((hk) => {
+              <div key={hk} className="sheet-panel p-4">
+                <div className="flex items-center justify-between mb-3 gap-2">
+                  <h3 className="text-lg font-bold break-words">{habNames[hk] || hk}</h3>
+                  {isAdmin && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const existing = personalItems.filter((it) => it.category === hk).map((it) => it.level);
+                        const next = (Math.max(0, ...existing) || 0) + 1;
+                        addItem({ category: hk, level: next, name: `Mejora nivel ${next}` });
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Nivel
+                    </Button>
+                  )}
+                </div>
+
+                {levels.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Sin mejoras.</p>
+                ) : (
+                  <Accordion type="multiple" className="w-full space-y-2">
+                    {levels.map((lvl) => {
+                      const canBuy = characterLevel >= lvl;
                       const items = personalItems.filter((it) => it.category === hk && it.level === lvl);
-                      const title = habNames[hk] || hk;
                       return (
-                        <div key={hk} className="rounded-md border border-border/60 p-3 bg-muted/10">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-sm">{title}</h4>
+                        <AccordionItem key={lvl} value={`${hk}-lvl-${lvl}`} className="rounded-md border border-border/60 bg-muted/10 px-3">
+                          <AccordionTrigger className="text-sm font-bold py-2">
+                            Nivel {lvl}
+                            {!canBuy && <span className="text-xs text-muted-foreground ml-2 font-normal">(solo lectura)</span>}
+                          </AccordionTrigger>
+                          <AccordionContent>
                             {isAdmin && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 px-2"
-                                onClick={() => addItem({ category: hk, level: lvl, name: "Nueva mejora" })}
-                              >
-                                <Plus className="h-3.5 w-3.5" />
-                              </Button>
+                              <div className="flex justify-end mb-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2"
+                                  onClick={() => addItem({ category: hk, level: lvl, name: "Nueva mejora" })}
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             )}
-                          </div>
-                          {items.length === 0 ? (
-                            <p className="text-xs text-muted-foreground">Sin mejoras.</p>
-                          ) : (
-                            <ul className="space-y-1.5">
-                              {items.map((it) => (
-                                <ItemRow
-                                  key={it.id}
-                                  item={it}
-                                  checked={purchasedIds.has(it.id)}
-                                  disabled={!canBuy}
-                                  onToggle={togglePurchase}
-                                  isAdmin={isAdmin}
-                                  onChanged={onChange}
-                                />
-                              ))}
-                            </ul>
-                          )}
-                        </div>
+                            {items.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">Sin mejoras.</p>
+                            ) : (
+                              <ul className="space-y-1.5">
+                                {items.map((it) => (
+                                  <ItemRow
+                                    key={it.id}
+                                    item={it}
+                                    checked={purchasedIds.has(it.id)}
+                                    disabled={!canBuy}
+                                    onToggle={togglePurchase}
+                                    isAdmin={isAdmin}
+                                    onChanged={onChange}
+                                  />
+                                ))}
+                              </ul>
+                            )}
+                          </AccordionContent>
+                        </AccordionItem>
                       );
                     })}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+                  </Accordion>
+                )}
+              </div>
             );
           })}
-        </Accordion>
+        </div>
       </section>
+
+      {/* IDEAS */}
+      <IdeasPanel characterId={characterId} habNames={habNames} isAdmin={isAdmin} />
 
       {/* GENERAL SHOP */}
       <section>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <h2 className="text-xl font-bold">Tienda general</h2>
           {isAdmin && (
-            <Button size="sm" variant="outline" onClick={resetCharacteristicAndAnulaciones}>
-              <Trash2 className="h-4 w-4 mr-1" /> Reset característica + anulaciones
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".txt,text/plain"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPrices(f); }}
+              />
+              <Button size="sm" variant="outline" disabled={uploading} onClick={() => fileInput.current?.click()}>
+                <Upload className="h-4 w-4 mr-1" /> {uploading ? "Subiendo…" : "Subir precios"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={resetCharacteristicAndAnulaciones}>
+                <Trash2 className="h-4 w-4 mr-1" /> Reset característica + anulaciones
+              </Button>
+            </div>
           )}
         </div>
 
@@ -354,6 +430,7 @@ export function ShopPanel({
                       onToggle={togglePurchase}
                       anulacionesCount={anulacionesCount}
                       userRequiredAnul={requiredAnulFor(it)}
+                      effectiveCost={costFor(it)}
                       onSetUserLock={(req) => setLockForUser(it, req)}
                       isAdmin={isAdmin}
                       onChanged={onChange}
@@ -413,6 +490,7 @@ function ItemRow({
   onSetUserLock,
   isAdmin,
   onChanged,
+  effectiveCost,
 }: {
   item: ShopItem;
   checked: boolean;
@@ -423,6 +501,7 @@ function ItemRow({
   onSetUserLock?: (required: number) => void | Promise<void>;
   isAdmin: boolean;
   onChanged: () => void;
+  effectiveCost?: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
@@ -501,7 +580,7 @@ function ItemRow({
         )}
       </div>
       <span className="text-xs flex items-center gap-1 text-muted-foreground">
-        {item.cost}
+        {effectiveCost ?? item.cost}
         {item.currency === "xp" ? (
           <Circle className="h-3 w-3 text-primary fill-primary/40" />
         ) : (

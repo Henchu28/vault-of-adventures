@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { unregisterPush } from '@/lib/push';
 
 type UserRole = 'master' | 'player';
 
@@ -140,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    await unregisterPush();
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

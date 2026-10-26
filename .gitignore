@@ -33,3 +33,6 @@ android/app/src/main/assets/capacitor.*.json
 *.apk
 *.jks
 signing.properties
+
+# Firebase config for push (key is semi-public but the repo is public)
+android/app/google-services.json

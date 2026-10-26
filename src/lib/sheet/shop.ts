@@ -40,6 +40,7 @@ export type UserPropertyLock = {
   character_id: string;
   item_id: string;
   required_anulaciones: number;
+  cost: number | null;
 };
 
 export async function fetchPropertyLocks(characterId: string) {
