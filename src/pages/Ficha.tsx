@@ -77,13 +77,13 @@ export default function Ficha() {
     );
   }
 
-  const ownName = profile?.character_name || profile?.display_name || 'Mis fichas';
+  const ownName = profile?.display_name || 'Mis fichas';
   const sections = [
     { userId: user.id, title: `${ownName} (tú)` },
     ...(isMaster
       ? players
           .filter((p) => p.user_id !== user.id)
-          .map((p) => ({ userId: p.user_id, title: p.character_name || p.display_name || p.user_id.slice(0, 8) }))
+          .map((p) => ({ userId: p.user_id, title: p.display_name || p.user_id.slice(0, 8) }))
       : []),
   ];
 

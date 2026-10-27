@@ -139,6 +139,8 @@ export type Database = {
           historia: string | null
           id: number
           ID_Campaña: number | null
+          continent: number | null
+          region: number | null
           name: string
           Organización: string
           personalidad: string | null
@@ -156,6 +158,8 @@ export type Database = {
           historia?: string | null
           id?: number
           ID_Campaña?: number | null
+          continent?: number | null
+          region?: number | null
           name?: string
           Organización?: string
           personalidad?: string | null
@@ -173,6 +177,8 @@ export type Database = {
           historia?: string | null
           id?: number
           ID_Campaña?: number | null
+          continent?: number | null
+          region?: number | null
           name?: string
           Organización?: string
           personalidad?: string | null
@@ -329,6 +335,7 @@ export type Database = {
       }
       npcs: {
         Row: {
+          known_by: string[]
           alignment: string
           apariencia: string | null
           Arquetipo: string | null
@@ -341,7 +348,6 @@ export type Database = {
           historia: string | null
           id: number
           ID_Campaña: number | null
-          known_by: string[]
           name: string
           Organización: string | null
           personalidad: string | null
@@ -349,6 +355,7 @@ export type Database = {
           region: number | null
         }
         Insert: {
+          known_by?: string[]
           alignment?: string
           apariencia?: string | null
           Arquetipo?: string | null
@@ -361,7 +368,6 @@ export type Database = {
           historia?: string | null
           id?: number
           ID_Campaña?: number | null
-          known_by?: string[]
           name: string
           Organización?: string | null
           personalidad?: string | null
@@ -369,6 +375,7 @@ export type Database = {
           region?: number | null
         }
         Update: {
+          known_by?: string[]
           alignment?: string
           apariencia?: string | null
           Arquetipo?: string | null
@@ -381,7 +388,6 @@ export type Database = {
           historia?: string | null
           id?: number
           ID_Campaña?: number | null
-          known_by?: string[]
           name?: string
           Organización?: string | null
           personalidad?: string | null
@@ -502,30 +508,6 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      push_tokens: {
-        Row: {
-          created_at: string
-          id: string
-          platform: string
-          token: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          platform?: string
-          token: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          platform?: string
-          token?: string
           user_id?: string
         }
         Relationships: []
@@ -680,339 +662,6 @@ export type Database = {
         }
         Relationships: []
       }
-      sheet_character_currency: {
-        Row: {
-          character_id: string
-          evo: number
-          power_color: string
-          updated_at: string
-          xp: number
-        }
-        Insert: {
-          character_id: string
-          evo?: number
-          power_color?: string
-          updated_at?: string
-          xp?: number
-        }
-        Update: {
-          character_id?: string
-          evo?: number
-          power_color?: string
-          updated_at?: string
-          xp?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sheet_character_currency_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: true
-            referencedRelation: "sheet_characters"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sheet_characters: {
-        Row: {
-          created_at: string
-          data: Json
-          id: string
-          name: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          data?: Json
-          id?: string
-          name?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          data?: Json
-          id?: string
-          name?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      sheet_help_texts: {
-        Row: {
-          content: string
-          field: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          content?: string
-          field: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          content?: string
-          field?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: []
-      }
-      sheet_ideas: {
-        Row: {
-          author_role: string
-          category: string
-          character_id: string
-          content: string
-          created_at: string
-          id: string
-          parent_id: string | null
-          reacted_by: string | null
-          reaction: string | null
-        }
-        Insert: {
-          author_role?: string
-          category: string
-          character_id: string
-          content: string
-          created_at?: string
-          id?: string
-          parent_id?: string | null
-          reacted_by?: string | null
-          reaction?: string | null
-        }
-        Update: {
-          author_role?: string
-          category?: string
-          character_id?: string
-          content?: string
-          created_at?: string
-          id?: string
-          parent_id?: string | null
-          reacted_by?: string | null
-          reaction?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sheet_ideas_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "sheet_characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sheet_ideas_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "sheet_ideas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sheet_inventory_items: {
-        Row: {
-          attributes_text: string
-          character_id: string
-          created_at: string
-          description: string
-          id: string
-          name: string
-          quantity: number
-          sort_order: number
-          stat_delta: number
-          stat_effects: Json
-          stat_target: string | null
-          updated_at: string
-        }
-        Insert: {
-          attributes_text?: string
-          character_id: string
-          created_at?: string
-          description?: string
-          id?: string
-          name?: string
-          quantity?: number
-          sort_order?: number
-          stat_delta?: number
-          stat_effects?: Json
-          stat_target?: string | null
-          updated_at?: string
-        }
-        Update: {
-          attributes_text?: string
-          character_id?: string
-          created_at?: string
-          description?: string
-          id?: string
-          name?: string
-          quantity?: number
-          sort_order?: number
-          stat_delta?: number
-          stat_effects?: Json
-          stat_target?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sheet_inventory_items_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "sheet_characters"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sheet_property_locks: {
-        Row: {
-          character_id: string
-          cost: number | null
-          created_at: string
-          id: string
-          item_id: string
-          required_anulaciones: number
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          character_id: string
-          cost?: number | null
-          created_at?: string
-          id?: string
-          item_id: string
-          required_anulaciones?: number
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          character_id?: string
-          cost?: number | null
-          created_at?: string
-          id?: string
-          item_id?: string
-          required_anulaciones?: number
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sheet_property_locks_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "sheet_characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sheet_property_locks_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "sheet_shop_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sheet_purchases: {
-        Row: {
-          character_id: string
-          created_at: string
-          id: string
-          item_id: string
-          points: number
-          user_id: string | null
-        }
-        Insert: {
-          character_id: string
-          created_at?: string
-          id?: string
-          item_id: string
-          points?: number
-          user_id?: string | null
-        }
-        Update: {
-          character_id?: string
-          created_at?: string
-          id?: string
-          item_id?: string
-          points?: number
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sheet_purchases_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "sheet_characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sheet_purchases_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "sheet_shop_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sheet_shop_items: {
-        Row: {
-          attribute_key: string | null
-          category: string
-          cost: number
-          created_at: string
-          currency: string
-          description: string
-          id: string
-          level: number
-          locked: boolean
-          name: string
-          owner_character_id: string | null
-          required_anulaciones: number
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          attribute_key?: string | null
-          category: string
-          cost?: number
-          created_at?: string
-          currency?: string
-          description?: string
-          id?: string
-          level?: number
-          locked?: boolean
-          name: string
-          owner_character_id?: string | null
-          required_anulaciones?: number
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          attribute_key?: string | null
-          category?: string
-          cost?: number
-          created_at?: string
-          currency?: string
-          description?: string
-          id?: string
-          level?: number
-          locked?: boolean
-          name?: string
-          owner_character_id?: string | null
-          required_anulaciones?: number
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sheet_shop_items_owner_character_id_fkey"
-            columns: ["owner_character_id"]
-            isOneToOne: false
-            referencedRelation: "sheet_characters"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       songs: {
         Row: {
           file: string | null
@@ -1046,6 +695,8 @@ export type Database = {
           Estado: string
           id: number
           ID_Campaña: number
+          continent: number | null
+          region: number | null
           name: string
           Organización: string
           Raza: string
@@ -1086,7 +737,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      sheet_can_access: { Args: { _character_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "master" | "player"
