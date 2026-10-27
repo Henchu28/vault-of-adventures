@@ -28,6 +28,8 @@ export function openSheet(characterId: string, category?: string) {
   const params = new URLSearchParams({ sheet: characterId });
   // Power ideas live in the Poder tab; skill ideas in the shop.
   params.set('tab', category === 'power' ? 'poder' : 'tienda');
+  // Makes every tap a distinct navigation, so the sheet reopens on the new tab even if it is already open.
+  params.set('n', String(Date.now()));
   window.history.pushState({}, '', `${import.meta.env.BASE_URL}ficha?${params.toString()}`);
   window.dispatchEvent(new PopStateEvent('popstate')); // react-router listens to this
 }

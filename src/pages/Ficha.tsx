@@ -21,9 +21,10 @@ export default function Ficha() {
   const [params, setParams] = useSearchParams();
   const sheetParam = params.get('sheet');
   const tabParam = params.get('tab') ?? undefined;
+  const navParam = params.get('n') ?? '';
 
   // A tapped notification (or any link) can open a given sheet straight away.
-  useEffect(() => { if (sheetParam) setSelectedId(sheetParam); }, [sheetParam]);
+  useEffect(() => { if (sheetParam) setSelectedId(sheetParam); }, [sheetParam, navParam]);
 
   const refresh = useCallback(async () => {
     const [{ data: rows }, { data: profs }] = await Promise.all([
@@ -67,7 +68,7 @@ export default function Ficha() {
     return (
       <div className="max-w-6xl mx-auto">
         <SheetView
-          key={selectedId}
+          key={`${selectedId}:${navParam}`}
           characterId={selectedId}
           initialTab={tabParam}
           onBack={() => { setSelectedId(null); setParams({}, { replace: true }); refresh(); }}

@@ -132,8 +132,12 @@ function IdeaBox({ title, category, ideas, busy, isAdmin, placeholder, onAdd, on
             const canDelete = isAdmin || (!legacyMaster && replies.length === 0);
             return (
               <li key={idea.id} className="space-y-2">
-                <div className={CARD}>
-                  {legacyMaster && <Badge variant="secondary" className="text-[10px]">Máster</Badge>}
+                <div className={cn(CARD, legacyMaster && "ml-6")}>
+                  {legacyMaster && (
+                    <Badge variant="secondary" className="gap-1 text-[10px]">
+                      <Reply className="h-3 w-3" /> Respuesta del Máster
+                    </Badge>
+                  )}
                   <p className="whitespace-pre-wrap break-words">{idea.content}</p>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] text-muted-foreground">{new Date(idea.created_at).toLocaleDateString()}</span>
