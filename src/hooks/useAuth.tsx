@@ -3,6 +3,9 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { unregisterPush } from '@/lib/push';
+import { Capacitor } from '@capacitor/core';
+
+const PUBLIC_WEB_URL = 'https://henchu28.github.io/vault-of-adventures/';
 
 type UserRole = 'master' | 'player';
 
@@ -109,7 +112,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, displayName: string, role: UserRole, characterName: string) => {
-    const redirectUrl = `${window.location.origin}${import.meta.env.BASE_URL}`;
+    // Native apps run on https://localhost, which a phone browser cannot open from the email link,
+    // so confirmations go back to the public web app instead.
+    const redirectUrl = Capacitor.isNativePlatform()
+      ? PUBLIC_WEB_URL
+      : `${window.location.origin}${import.meta.env.BASE_URL}`;
     
     const { error } = await supabase.auth.signUp({
       email,
