@@ -21,7 +21,7 @@ import { ShopPanel } from "./ShopPanel";
 import { InventoryPanel } from "./InventoryPanel";
 import { PdfRenderContext } from "./AutoTextarea";
 import { CurrencyBadges } from "./CurrencyBadges";
-import { PowerIdeaDialog } from "./PowerIdeaDialog";
+import { PowerIdeasBox } from "./IdeasPanel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,9 +39,9 @@ async function capturePdfPage(element: HTMLElement) {
   return html2canvas(element, { backgroundColor: "#ffffff", scale: 2, useCORS: true, logging: false });
 }
 
-type Props = { characterId: string; onBack: () => void; initialTab?: string; openPowerIdea?: boolean };
+type Props = { characterId: string; onBack: () => void; initialTab?: string };
 
-export function SheetView({ characterId, onBack, initialTab, openPowerIdea }: Props) {
+export function SheetView({ characterId, onBack, initialTab }: Props) {
   const { user, isMaster } = useAuth();
   const [data, setData] = useState<CharacterData | null>(null);
   const [characterOwnerId, setCharacterOwnerId] = useState<string | null>(null);
@@ -220,7 +220,6 @@ export function SheetView({ characterId, onBack, initialTab, openPowerIdea }: Pr
               {isMaster && <CurrencyEditor currency={currency} characterId={characterId} onSaved={refreshShop} />}
             </>
           )}
-          <PowerIdeaDialog characterId={characterId} isOwner={isOwner} defaultOpen={openPowerIdea} />
           <Button variant="outline" size="sm" onClick={exportPDF} disabled={exporting}>
             <Download className="h-4 w-4 mr-1" /> {exporting ? "Generando…" : "PDF"}
           </Button>
@@ -249,6 +248,7 @@ export function SheetView({ characterId, onBack, initialTab, openPowerIdea }: Pr
           </TabsContent>
           <TabsContent value="poder">
             <PowerPanel data={data} update={update} shopItems={shopItems} purchases={purchases} powerColor={powerColor} />
+            <PowerIdeasBox characterId={characterId} isAdmin={isMaster} />
           </TabsContent>
           <TabsContent value="inventario">
             <InventoryPanel

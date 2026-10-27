@@ -21,7 +21,6 @@ export default function Ficha() {
   const [params, setParams] = useSearchParams();
   const sheetParam = params.get('sheet');
   const tabParam = params.get('tab') ?? undefined;
-  const powerParam = params.get('power') === '1';
 
   // A tapped notification (or any link) can open a given sheet straight away.
   useEffect(() => { if (sheetParam) setSelectedId(sheetParam); }, [sheetParam]);
@@ -71,7 +70,6 @@ export default function Ficha() {
           key={selectedId}
           characterId={selectedId}
           initialTab={tabParam}
-          openPowerIdea={powerParam}
           onBack={() => { setSelectedId(null); setParams({}, { replace: true }); refresh(); }}
         />
       </div>

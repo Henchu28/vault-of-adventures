@@ -50,9 +50,8 @@ Deno.serve(async (req) => {
     const authorization = req.headers.get('Authorization');
     if (!authorization) return json({ error: 'Missing authorization' }, 401);
 
-    // Either a skill idea (idea_id) or the character's single "power idea" note (power_character_id).
-    const { idea_id, power_character_id } = await req.json();
-    if (!idea_id && !power_character_id) return json({ error: 'idea_id or power_character_id is required' }, 400);
+    const { idea_id } = await req.json();
+    if (!idea_id) return json({ error: 'idea_id is required' }, 400);
 
     const url = Deno.env.get('SUPABASE_URL')!;
     // The user's own client: row level security decides whether they can see the idea at all.
@@ -66,31 +65,21 @@ Deno.serve(async (req) => {
     let data: Record<string, string>;
     const clip = (text: string) => (text.length > 120 ? `${text.slice(0, 117)}...` : text);
 
-    if (idea_id) {
-      const { data: idea } = await userClient
-        .from('sheet_ideas').select('id, character_id, category, content, created_at').eq('id', idea_id).maybeSingle();
-      if (!idea) return json({ error: 'Idea not found' }, 404);
-      // Only fresh ideas notify, so an old id cannot be replayed to spam the masters.
-      if (Date.now() - new Date(idea.created_at).getTime() > 2 * 60 * 1000) return json({ sent: 0, reason: 'stale' });
+    const { data: idea } = await userClient
+      .from('sheet_ideas').select('id, character_id, category, content, created_at').eq('id', idea_id).maybeSingle();
+    if (!idea) return json({ error: 'Idea not found' }, 404);
+    // Only fresh ideas notify, so an old id cannot be replayed to spam the masters.
+    if (Date.now() - new Date(idea.created_at).getTime() > 2 * 60 * 1000) return json({ sent: 0, reason: 'stale' });
 
-      const { data: sheet } = await userClient
-        .from('sheet_characters').select('name, data').eq('id', idea.character_id).maybeSingle();
-      const habName = sheet?.data?.poder?.[`habilidad${idea.category.slice(-1)}Nombre`] || idea.category;
-      title = `Nueva idea de ${sheet?.name ?? 'un jugador'}`;
-      body = `${habName}: ${clip(String(idea.content))}`;
-      data = { type: 'idea', character_id: String(idea.character_id), idea_id: String(idea.id) };
-    } else {
-      const { data: power } = await userClient
-        .from('sheet_power_ideas').select('character_id, content, updated_at').eq('character_id', power_character_id).maybeSingle();
-      if (!power) return json({ error: 'Power idea not found' }, 404);
-      if (Date.now() - new Date(power.updated_at).getTime() > 2 * 60 * 1000) return json({ sent: 0, reason: 'stale' });
-
-      const { data: sheet } = await userClient
-        .from('sheet_characters').select('name').eq('id', power.character_id).maybeSingle();
-      title = `Idea de poder de ${sheet?.name ?? 'un jugador'}`;
-      body = clip(String(power.content));
-      data = { type: 'power_idea', character_id: String(power.character_id) };
-    }
+    const { data: sheet } = await userClient
+      .from('sheet_characters').select('name, data').eq('id', idea.character_id).maybeSingle();
+    // Category is hab1..hab3 (skill ideas) or power (the power idea box).
+    const label = idea.category === 'power'
+      ? 'Poder'
+      : sheet?.data?.poder?.[`habilidad${idea.category.slice(-1)}Nombre`] || idea.category;
+    title = `Nueva idea de ${sheet?.name ?? 'un jugador'}`;
+    body = `${label}: ${clip(String(idea.content))}`;
+    data = { type: 'idea', category: String(idea.category), character_id: String(idea.character_id), idea_id: String(idea.id) };
 
     const serviceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT');
     if (!serviceAccountJson) return json({ error: 'FCM_SERVICE_ACCOUNT not configured' }, 500);

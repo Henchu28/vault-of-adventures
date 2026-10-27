@@ -9,10 +9,10 @@ const ENABLED = import.meta.env.VITE_PUSH_ENABLED === 'true';
 let currentToken: string | null = null;
 
 /** Opens the Ficha page on a given sheet (and tab) without a React router handle. */
-export function openSheet(characterId: string, kind?: string) {
+export function openSheet(characterId: string, category?: string) {
   const params = new URLSearchParams({ sheet: characterId });
-  if (kind === 'idea') params.set('tab', 'tienda');
-  if (kind === 'power_idea') params.set('power', '1');
+  // Power ideas live in the Poder tab; skill ideas in the shop.
+  params.set('tab', category === 'power' ? 'poder' : 'tienda');
   window.history.pushState({}, '', `${import.meta.env.BASE_URL}ficha?${params.toString()}`);
   window.dispatchEvent(new PopStateEvent('popstate')); // react-router listens to this
 }
@@ -37,16 +37,16 @@ export async function registerPush(userId: string) {
       await PushNotifications.addListener('registrationError', (error) => console.error('Push registration error', error));
       // With the app open the system shows nothing, so surface it in-app.
       await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-        const { character_id: characterId, type } = notification.data ?? {};
+        const { character_id: characterId, category } = notification.data ?? {};
         toast(notification.title ?? 'Notificación', {
           description: notification.body,
-          action: characterId ? { label: 'Abrir', onClick: () => openSheet(characterId, type) } : undefined,
+          action: characterId ? { label: 'Abrir', onClick: () => openSheet(characterId, category) } : undefined,
         });
       });
       // Tapping the system notification (app closed or in the background) lands on that player's sheet.
       await PushNotifications.addListener('pushNotificationActionPerformed', ({ notification }) => {
-        const { character_id: characterId, type } = notification.data ?? {};
-        if (characterId) openSheet(characterId, type);
+        const { character_id: characterId, category } = notification.data ?? {};
+        if (characterId) openSheet(characterId, category);
       });
     }
     const permission = await PushNotifications.requestPermissions();
