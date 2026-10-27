@@ -5,6 +5,8 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // The web/PWA build is served from a sub-path (see scripts/deploy-pwa.sh); native builds use "/".
+  base: process.env.VITE_BASE || "/",
   server: {
     host: "::",
     port: 8080,
