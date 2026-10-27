@@ -42,7 +42,7 @@ const App = () => (
       <AuthProvider>
         <ThemeProvider>
           <Toaster />
-          <Sonner />
+          <Sonner expand visibleToasts={6} />
           <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || "/"}>
             <Routes>
               <Route path="/auth" element={<Auth />} />

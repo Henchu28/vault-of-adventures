@@ -105,7 +105,8 @@ Deno.serve(async (req) => {
             token: t.token,
             notification: { title, body },
             data,
-            android: { priority: 'HIGH' },
+            // A tag per idea keeps every notification separate in the tray (none replaces another).
+            android: { priority: 'HIGH', notification: { tag: String(idea.id) } },
             apns: { headers: { 'apns-priority': '10' }, payload: { aps: { sound: 'default' } } },
           },
         }),
