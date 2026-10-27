@@ -3,7 +3,8 @@
 # Usage: scripts/release-apk.sh "notes"   (version is read from android/app/build.gradle)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-export JAVA_HOME="${JAVA_HOME:-C:/Android/jdk-21.0.12.1+1}" ANDROID_HOME="${ANDROID_HOME:-C:/Android/Sdk}"
+# Capacitor 7 plugins need JDK 21, so an inherited JAVA_HOME (e.g. JDK 17) must not win.
+export JAVA_HOME="${VAULT_JAVA_HOME:-C:/Android/jdk-21.0.12.1+1}" ANDROID_HOME="${ANDROID_HOME:-C:/Android/Sdk}"
 REPO="Henchu28/vault-of-adventures-apk"
 VERSION=$(grep versionName android/app/build.gradle | head -1 | cut -d'"' -f2)
 npm run build
