@@ -265,7 +265,7 @@ export default function Music() {
 
       {/* Now Playing */}
       {playingSongId && createPortal(
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur shadow-lg"><div className="container mx-auto max-w-3xl px-2 py-1"><MusicPlayer
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur shadow-lg pb-[env(safe-area-inset-bottom)]"><div className="container mx-auto max-w-3xl px-2 py-1"><MusicPlayer
           songs={playerSongs.length > 0 ? playerSongs : songs}
           currentSongId={playingSongId}
           onSongChange={setPlayingSongId}

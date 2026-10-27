@@ -9,7 +9,8 @@ const ENABLED = import.meta.env.VITE_PUSH_ENABLED === 'true';
 let currentToken: string | null = null;
 let listenersReady = false;
 
-export const pushAvailable = () => ENABLED && Capacitor.isNativePlatform();
+// Only the Android app is wired for push; iOS users are players and get no notifications.
+export const pushAvailable = () => ENABLED && Capacitor.getPlatform() === 'android';
 
 /** Asks for permission and stores this device's token so the notify-idea function can reach it. */
 export async function registerPush(userId: string) {
@@ -21,7 +22,7 @@ export async function registerPush(userId: string) {
         currentToken = value;
         const { error } = await sheetDb
           .from('push_tokens')
-          .upsert({ user_id: userId, token: value, platform: 'android' }, { onConflict: 'token' });
+          .upsert({ user_id: userId, token: value, platform: Capacitor.getPlatform() }, { onConflict: 'token' });
         if (error) console.error('Could not save push token', error.message);
       });
       await PushNotifications.addListener('registrationError', (error) => console.error('Push registration error', error));

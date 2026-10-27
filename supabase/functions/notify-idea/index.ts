@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
             },
             data: { type: 'idea', character_id: String(idea.character_id), idea_id: String(idea.id) },
             android: { priority: 'HIGH' },
+            apns: { headers: { 'apns-priority': '10' }, payload: { aps: { sound: 'default' } } },
           },
         }),
       });

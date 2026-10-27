@@ -131,3 +131,10 @@ All colors MUST be HSL.
     text-transform: uppercase;
   }
 }
+
+/* iOS zooms the page when focusing a field under 16px; keep fields at 16px there. */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}

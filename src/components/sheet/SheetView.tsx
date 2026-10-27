@@ -28,6 +28,9 @@ import { ArrowLeft, Loader2, Pencil, Check, Download, Palette } from "lucide-rea
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 
 const PDF_PAGE_WIDTH = 900;
 
@@ -181,7 +184,18 @@ export function SheetView({ characterId, onBack }: Props) {
       };
       addPage(c1, true);
       addPage(c2, false);
-      pdf.save(`${data.nombre || "personaje"}.pdf`);
+      const fileName = `${(data.nombre || "personaje").replace(/[\\/:*?"<>|]/g, "_")}.pdf`;
+      if (Capacitor.isNativePlatform()) {
+        // WebViews ignore blob downloads, so hand the file to the system share sheet instead.
+        const written = await Filesystem.writeFile({
+          path: fileName,
+          data: pdf.output("datauristring").split(",")[1],
+          directory: Directory.Cache,
+        });
+        await Share.share({ title: fileName, url: written.uri });
+      } else {
+        pdf.save(fileName);
+      }
     } catch (e) {
       toast.error("Error generando PDF: " + (e as Error).message);
     } finally {

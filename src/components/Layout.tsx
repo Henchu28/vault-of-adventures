@@ -55,7 +55,7 @@ export function Layout({ children }: LayoutProps) {
       >
         <div className="absolute inset-0 bg-primary/60 backdrop-blur-[1px]" />
 
-        <div className="relative z-10 px-4 py-5">
+        <div className="relative z-10 px-4 py-5 pt-[calc(1.25rem+env(safe-area-inset-top))]">
           {/* Title row - centered */}
           <div className="flex items-center justify-center gap-4">
             <D20Roller size="lg" />
