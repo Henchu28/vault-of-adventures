@@ -1,7 +1,10 @@
 name: iOS build check
 
-# Manual run: compiles the iOS app for the simulator without signing, to catch build errors without a Mac.
+# Compiles the iOS app for the simulator without signing, to catch build errors without a Mac.
 on:
+  push:
+    branches: [android-apk]
+    paths: ['ios/**', 'src/**', 'package.json', '.github/workflows/ios-build.yml']
   workflow_dispatch:
 
 jobs:
