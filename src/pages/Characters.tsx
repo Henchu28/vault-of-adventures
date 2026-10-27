@@ -279,7 +279,7 @@ export default function Characters() {
   const profileLabel = (uid: string | null | undefined) => {
     if (!uid) return null;
     const p = profiles.find(p => p.user_id === uid);
-    return p?.character_name || p?.display_name || uid.slice(0, 8);
+    return p?.display_name || uid.slice(0, 8);
   };
 
   const charFormJSX = (form: typeof defaultCharForm, setForm: (f: typeof defaultCharForm) => void, onSubmit: () => void, isEdit: boolean) => (
@@ -363,7 +363,7 @@ export default function Characters() {
           <SelectTrigger><SelectValue placeholder="Sin jugador" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Sin jugador</SelectItem>
-            {profiles.filter(p => p.role === 'player').map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.character_name || `${p.display_name || p.user_id.slice(0, 8)} (sin nombre de personaje)`}</SelectItem>)}
+            {profiles.filter(p => p.role === 'player').map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.display_name || p.user_id.slice(0, 8)}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -483,7 +483,7 @@ export default function Characters() {
                   known_by: checked ? [...form.known_by, p.user_id] : form.known_by.filter(id => id !== p.user_id),
                 })}
               />
-              {p.character_name || `${p.display_name || p.user_id.slice(0, 8)} (sin nombre de personaje)`}
+              {p.display_name || p.user_id.slice(0, 8)}
             </label>
           ))}
         </div>
