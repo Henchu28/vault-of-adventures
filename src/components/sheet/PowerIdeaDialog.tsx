@@ -9,12 +9,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
-type Props = { characterId: string; isOwner: boolean };
+type Props = { characterId: string; isOwner: boolean; defaultOpen?: boolean };
 
 /** Single "power idea" note per sheet: hidden until the + is pressed; saving it notifies the masters. */
-export function PowerIdeaDialog({ characterId, isOwner }: Props) {
+export function PowerIdeaDialog({ characterId, isOwner, defaultOpen = false }: Props) {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [saved, setSaved] = useState("");
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);

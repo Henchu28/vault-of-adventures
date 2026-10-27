@@ -39,9 +39,9 @@ async function capturePdfPage(element: HTMLElement) {
   return html2canvas(element, { backgroundColor: "#ffffff", scale: 2, useCORS: true, logging: false });
 }
 
-type Props = { characterId: string; onBack: () => void };
+type Props = { characterId: string; onBack: () => void; initialTab?: string; openPowerIdea?: boolean };
 
-export function SheetView({ characterId, onBack }: Props) {
+export function SheetView({ characterId, onBack, initialTab, openPowerIdea }: Props) {
   const { user, isMaster } = useAuth();
   const [data, setData] = useState<CharacterData | null>(null);
   const [characterOwnerId, setCharacterOwnerId] = useState<string | null>(null);
@@ -220,7 +220,7 @@ export function SheetView({ characterId, onBack }: Props) {
               {isMaster && <CurrencyEditor currency={currency} characterId={characterId} onSaved={refreshShop} />}
             </>
           )}
-          <PowerIdeaDialog characterId={characterId} isOwner={isOwner} />
+          <PowerIdeaDialog characterId={characterId} isOwner={isOwner} defaultOpen={openPowerIdea} />
           <Button variant="outline" size="sm" onClick={exportPDF} disabled={exporting}>
             <Download className="h-4 w-4 mr-1" /> {exporting ? "Generando…" : "PDF"}
           </Button>
@@ -237,7 +237,7 @@ export function SheetView({ characterId, onBack }: Props) {
           )}
         </div>
 
-        <Tabs defaultValue="ficha" className="w-full">
+        <Tabs defaultValue={initialTab && ["ficha", "poder", "inventario", "tienda"].includes(initialTab) ? initialTab : "ficha"} className="w-full">
           <TabsList className="grid grid-cols-4 w-full mb-4">
             <TabsTrigger value="ficha">Ficha</TabsTrigger>
             <TabsTrigger value="poder">Poder</TabsTrigger>

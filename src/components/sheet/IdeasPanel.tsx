@@ -5,7 +5,7 @@ import { useAppSync } from "@/hooks/useAppSync";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, ThumbsDown, Trash2, Lightbulb } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Trash2, Lightbulb, Reply } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ type Idea = {
   category: HabKey;
   content: string;
   reaction: Reaction | null;
+  author_role: "player" | "master";
   created_at: string;
 };
 
@@ -85,7 +86,8 @@ export function IdeasPanel({ characterId, habNames, isAdmin }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {HAB_KEYS.map((hk) => {
           const list = ideas.filter((i) => i.category === hk);
-          const pending = list.filter((i) => !i.reaction).length;
+          // Master ideas are replies: they are never rated nor counted as pending.
+          const pending = list.filter((i) => i.author_role !== "master" && !i.reaction).length;
           return (
             <div key={hk} className="sheet-panel p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
@@ -97,15 +99,28 @@ export function IdeasPanel({ characterId, habNames, isAdmin }: Props) {
                 <p className="text-xs text-muted-foreground">Aún no hay ideas.</p>
               ) : (
                 <ul className="space-y-2">
-                  {list.map((idea) => (
-                    <li key={idea.id} className="rounded-md border border-border/60 bg-muted/10 p-2 text-sm space-y-1">
+                  {list.map((idea) => {
+                    const fromMaster = idea.author_role === "master";
+                    return (
+                    <li
+                      key={idea.id}
+                      className={cn(
+                        "rounded-md border p-2 text-sm space-y-1",
+                        fromMaster ? "ml-4 border-l-4 border-l-primary border-primary/40 bg-primary/10" : "border-border/60 bg-muted/10",
+                      )}
+                    >
+                      {fromMaster && (
+                        <Badge variant="secondary" className="gap-1 text-[10px]">
+                          <Reply className="h-3 w-3" /> Respuesta del Máster
+                        </Badge>
+                      )}
                       <p className="whitespace-pre-wrap break-words">{idea.content}</p>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[11px] text-muted-foreground">
                           {new Date(idea.created_at).toLocaleDateString()}
                         </span>
                         <div className="flex items-center gap-1">
-                          {isAdmin ? (
+                          {fromMaster ? null : isAdmin ? (
                             <>
                               <Button
                                 size="sm"
@@ -140,7 +155,8 @@ export function IdeasPanel({ characterId, habNames, isAdmin }: Props) {
                         </div>
                       </div>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               )}
 
@@ -149,10 +165,10 @@ export function IdeasPanel({ characterId, habNames, isAdmin }: Props) {
                   rows={2}
                   value={drafts[hk]}
                   onChange={(e) => setDrafts((d) => ({ ...d, [hk]: e.target.value }))}
-                  placeholder="Escribe una idea para esta habilidad"
+                  placeholder={isAdmin ? "Responde a las ideas de esta habilidad" : "Escribe una idea para esta habilidad"}
                 />
                 <Button size="sm" className="w-full" disabled={busy || !drafts[hk].trim()} onClick={() => addIdea(hk)}>
-                  Añadir idea
+                  {isAdmin ? "Añadir respuesta" : "Añadir idea"}
                 </Button>
               </div>
             </div>

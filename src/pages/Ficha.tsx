@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { sheetDb } from '@/lib/sheet/db';
@@ -17,6 +18,13 @@ export default function Ficha() {
   const [players, setPlayers] = useState<PlayerProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  const sheetParam = params.get('sheet');
+  const tabParam = params.get('tab') ?? undefined;
+  const powerParam = params.get('power') === '1';
+
+  // A tapped notification (or any link) can open a given sheet straight away.
+  useEffect(() => { if (sheetParam) setSelectedId(sheetParam); }, [sheetParam]);
 
   const refresh = useCallback(async () => {
     const [{ data: rows }, { data: profs }] = await Promise.all([
@@ -60,8 +68,11 @@ export default function Ficha() {
     return (
       <div className="max-w-6xl mx-auto">
         <SheetView
+          key={selectedId}
           characterId={selectedId}
-          onBack={() => { setSelectedId(null); refresh(); }}
+          initialTab={tabParam}
+          openPowerIdea={powerParam}
+          onBack={() => { setSelectedId(null); setParams({}, { replace: true }); refresh(); }}
         />
       </div>
     );
