@@ -50,8 +50,9 @@ Deno.serve(async (req) => {
     const authorization = req.headers.get('Authorization');
     if (!authorization) return json({ error: 'Missing authorization' }, 401);
 
-    const { idea_id } = await req.json();
-    if (!idea_id) return json({ error: 'idea_id is required' }, 400);
+    // Either a skill idea (idea_id) or the character's single "power idea" note (power_character_id).
+    const { idea_id, power_character_id } = await req.json();
+    if (!idea_id && !power_character_id) return json({ error: 'idea_id or power_character_id is required' }, 400);
 
     const url = Deno.env.get('SUPABASE_URL')!;
     // The user's own client: row level security decides whether they can see the idea at all.
@@ -59,15 +60,37 @@ Deno.serve(async (req) => {
     const { data: userData, error: userError } = await userClient.auth.getUser();
     if (userError || !userData.user) return json({ error: 'Invalid session' }, 401);
 
-    const { data: idea } = await userClient
-      .from('sheet_ideas').select('id, character_id, category, content, created_at').eq('id', idea_id).maybeSingle();
-    if (!idea) return json({ error: 'Idea not found' }, 404);
-    // Only fresh ideas notify, so an old id cannot be replayed to spam the masters.
-    if (Date.now() - new Date(idea.created_at).getTime() > 2 * 60 * 1000) return json({ sent: 0, reason: 'stale' });
+    // What to announce: built from rows the caller can read, so row level security gates it.
+    let title: string;
+    let body: string;
+    let data: Record<string, string>;
+    const clip = (text: string) => (text.length > 120 ? `${text.slice(0, 117)}...` : text);
 
-    const { data: sheet } = await userClient
-      .from('sheet_characters').select('name, data').eq('id', idea.character_id).maybeSingle();
-    const habName = sheet?.data?.poder?.[`habilidad${idea.category.slice(-1)}Nombre`] || idea.category;
+    if (idea_id) {
+      const { data: idea } = await userClient
+        .from('sheet_ideas').select('id, character_id, category, content, created_at').eq('id', idea_id).maybeSingle();
+      if (!idea) return json({ error: 'Idea not found' }, 404);
+      // Only fresh ideas notify, so an old id cannot be replayed to spam the masters.
+      if (Date.now() - new Date(idea.created_at).getTime() > 2 * 60 * 1000) return json({ sent: 0, reason: 'stale' });
+
+      const { data: sheet } = await userClient
+        .from('sheet_characters').select('name, data').eq('id', idea.character_id).maybeSingle();
+      const habName = sheet?.data?.poder?.[`habilidad${idea.category.slice(-1)}Nombre`] || idea.category;
+      title = `Nueva idea de ${sheet?.name ?? 'un jugador'}`;
+      body = `${habName}: ${clip(String(idea.content))}`;
+      data = { type: 'idea', character_id: String(idea.character_id), idea_id: String(idea.id) };
+    } else {
+      const { data: power } = await userClient
+        .from('sheet_power_ideas').select('character_id, content, updated_at').eq('character_id', power_character_id).maybeSingle();
+      if (!power) return json({ error: 'Power idea not found' }, 404);
+      if (Date.now() - new Date(power.updated_at).getTime() > 2 * 60 * 1000) return json({ sent: 0, reason: 'stale' });
+
+      const { data: sheet } = await userClient
+        .from('sheet_characters').select('name').eq('id', power.character_id).maybeSingle();
+      title = `Idea de poder de ${sheet?.name ?? 'un jugador'}`;
+      body = clip(String(power.content));
+      data = { type: 'power_idea', character_id: String(power.character_id) };
+    }
 
     const serviceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT');
     if (!serviceAccountJson) return json({ error: 'FCM_SERVICE_ACCOUNT not configured' }, 500);
@@ -81,7 +104,6 @@ Deno.serve(async (req) => {
     if (!tokens || tokens.length === 0) return json({ sent: 0 });
 
     const accessToken = await getAccessToken(serviceAccount);
-    const content = String(idea.content);
     let sent = 0;
     const dead: string[] = [];
 
@@ -92,11 +114,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           message: {
             token: t.token,
-            notification: {
-              title: `Nueva idea de ${sheet?.name ?? 'un jugador'}`,
-              body: `${habName}: ${content.length > 120 ? `${content.slice(0, 117)}...` : content}`,
-            },
-            data: { type: 'idea', character_id: String(idea.character_id), idea_id: String(idea.id) },
+            notification: { title, body },
+            data,
             android: { priority: 'HIGH' },
             apns: { headers: { 'apns-priority': '10' }, payload: { aps: { sound: 'default' } } },
           },

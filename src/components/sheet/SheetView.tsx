@@ -21,6 +21,7 @@ import { ShopPanel } from "./ShopPanel";
 import { InventoryPanel } from "./InventoryPanel";
 import { PdfRenderContext } from "./AutoTextarea";
 import { CurrencyBadges } from "./CurrencyBadges";
+import { PowerIdeaDialog } from "./PowerIdeaDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -219,6 +220,7 @@ export function SheetView({ characterId, onBack }: Props) {
               {isMaster && <CurrencyEditor currency={currency} characterId={characterId} onSaved={refreshShop} />}
             </>
           )}
+          <PowerIdeaDialog characterId={characterId} isOwner={isOwner} />
           <Button variant="outline" size="sm" onClick={exportPDF} disabled={exporting}>
             <Download className="h-4 w-4 mr-1" /> {exporting ? "Generando…" : "PDF"}
           </Button>
