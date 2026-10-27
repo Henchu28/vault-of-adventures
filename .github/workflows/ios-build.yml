@@ -1,6 +1,6 @@
 name: iOS build check
 
-# Compiles the iOS app for the simulator without signing, to catch build errors without a Mac.
+# Compiles the iOS app for devices without signing and keeps the unsigned IPA as an artifact (re-signed on the user's PC with a free Apple ID).
 on:
   push:
     branches: [android-apk]
@@ -22,9 +22,18 @@ jobs:
       - name: Install pods
         working-directory: ios/App
         run: pod install
-      - name: Build for the simulator (unsigned)
+      - name: Build for devices (unsigned)
         working-directory: ios/App
         run: |
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug \
-            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build             CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO build
+      - name: Package unsigned IPA
+        working-directory: ios/App
+        run: |
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qry VaultOfAdventures-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VaultOfAdventures-unsigned-ipa
+          path: ios/App/VaultOfAdventures-unsigned.ipa
+          retention-days: 7
